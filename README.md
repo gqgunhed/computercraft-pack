@@ -1,5 +1,6 @@
 # computercraft-pack
 ComputerCraft Resource Pack mit vielen Programmen fuer monotone oder gefaehrliche Arbeiten ;-)
+Getestet mit Minecraft 1.7.10 und ComputerCraft 1.65
 
 # Installation
 Einfach mit einem "git clone https://github.com/gqgunhed/computercraft-pack/" in den Unterordner "resourcepacks" im Minecraft-Ordner klonen.
