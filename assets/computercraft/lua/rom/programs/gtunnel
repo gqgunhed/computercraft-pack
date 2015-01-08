@@ -1,0 +1,23 @@
+#!/usr/bin/env lua
+
+local returner = false
+-- trying refuel
+tfuncs.refuel()
+
+write("Tunnel Breite (x)? ")
+x = tonumber(io.read())
+write("Tunnel Hoehe (y)? ")
+y = tonumber(io.read())
+write("Tunnel Laenge (z)? ")
+z = tonumber(io.read())
+
+returner = helpers.answer_yes("Am Ende wieder auf Startposition (j/n)?") 
+
+print ("debug: x=/"..x.."y="..y.."/z="..z.."/return="..tostring(returner).." ")
+
+dig2.set_returning(returner)
+dig2.set_bridging(false)
+dig2.set_sealing(false)
+dig2.set_debugging(false)
+
+dig2.tunnel(x,y,z)

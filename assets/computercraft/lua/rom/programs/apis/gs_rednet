@@ -1,0 +1,346 @@
+#!/usr/bin/env lua
+
+local FONTSIZE = 1      -- for external montiors
+local TIMEOUT = 10      -- waiting for rendet messages
+local LOCALECHO = 1     -- display the messages on turtle?
+local send, msg, dist = nil, nil, nil
+local QFILE = "/queue"  -- where to store queued commands?
+
+function init()
+    -- if rednet.isOpen("right")=="false" then
+        rednet.open("right")
+    -- end
+    local id = os.getComputerID()
+    print("id:   "..id)
+    local name = os.getComputerLabel()
+    print("name: "..name)
+    -- local message = tostring(id).." ("..name..") is online now."
+    print (message)
+    rednet.broadcast(message)
+end
+
+function status()
+    local pos = tfuncs.gps_locate()
+    local fuel = turtle.getFuelLevel()
+    if type(pos)=="table" then
+        pos = "GPS pos ("..pos[1].."/"..pos[2].."/"..pos[3]..")"
+    end
+    local js = tfuncs.get_jobstatus()
+    rednet.broadcast(js.." / "..fuel.." fuel / "..pos)
+end
+
+function receiver()
+    while true do
+        local id,recv,dist = rednet.receive(TIMEOUT)
+        if recv then
+            print ("from "..id..": "..tostring(recv).." (dist: "..dist..")")
+        -- else
+            -- write(". ")
+        end
+    end
+end
+
+
+function receiver_monitor(location)
+    local monitor = peripheral.wrap(tostring(location))
+    monitor.setTextScale(FONTSIZE)
+    maxx,maxy = monitor.getSize()
+    print ("max-x:"..maxx.." / max-y: "..maxy)
+    while true do
+        local id,recv = rednet.receive(TIMEOUT)
+        local posx, posy = monitor.getCursorPos()
+        if recv then
+            monitor.write(id..": "..tostring(recv))
+            if posy<maxy then
+                monitor.setCursorPos(1,posy+1)
+            else
+                monitor.scroll(1)
+                monitor.setCursorPos(1,posy)
+            end
+        end
+    end
+end
+
+
+function broadcaster()
+    while true do
+        print ("Welche Nachricht soll per Broadcast verteilt werden?")
+        trans = tostring(io.read())
+        rednet.broadcast(trans)
+    end
+end
+
+
+function transmit()
+    print ("Nachricht an welche ID:")
+    tid = tonumber(io.read())
+    print ("Welche Nachricht?")
+    trans = tostring(io.read())
+    rednet.send(tid, trans)
+end
+
+
+function simple_receiver()
+    repeat sender,msg,dist = rednet.receive(TIMEOUT)
+        if msg==nil then
+            -- do nothing
+        else
+            msg = tostring(msg)
+            if LOCALECHO==1 then
+                print ("from:"..sender.."/"..msg)
+                print ("distance: "..dist)
+            end
+            if turtle[msg] then
+                -- dictionary entry with name of function
+                -- tries builtin-turtle-functions:
+                -- "up" will result in turtle.up()
+                turtle[msg]()
+            else
+                -- function was sent via "string.dump()"
+                -- or as function call like "dig2.up()"
+                job = loadstring(msg)
+                job()
+            --else
+                -- no library found to handle this
+                -- fall back and try if this was
+                -- a shell command
+                --shell.run(msg)
+            end
+        end
+    until msg=="DETACH"
+end
+
+
+function simple_receiver2()
+    while 1 do
+        -- loop forever
+        sender,msg,dist = rednet.receive(TIMEOUT)
+        if msg==nil then
+            -- do nothing, it's just the rednet timing out
+            -- going for another loop
+        elseif string.sub(msg,1,6)=="SHELL:" then
+            -- run the given string afer "SHELL:"
+            -- within a shell
+            msg = string.sub(msg,7)
+            print("debug: shell-run("..msg..")")
+            shell.run(msg)
+        elseif string.sub(msg,1,6)=="DETACH" then
+            rednet.broadcast("detaching from remote control.")
+            -- end the program
+            break
+        else
+            -- in any other case try to build some
+            -- lua code from the strings sent
+            job = loadstring(msg)
+            job()
+        end
+    end 
+end
+
+function simple_receiver3()
+    local QUEUE = {}        -- store commands
+    local QUEUEING = false  -- currently queueing?
+
+    while 1 do
+        -- loop forever
+        sender,msg,dist = rednet.receive(TIMEOUT)
+        if msg==nil then
+            -- do nothing, it's just the rednet timing out
+            -- going for another loop
+        elseif string.sub(msg,1,5)=="QUEUE" then
+            if string.sub(msg,7,10)=="NEW" then
+                QUEUEING=true
+                QUEUE={}
+            elseif string.sub(msg,7,10)=="END" then
+                QUEUEING = false
+            elseif string.sub(msg,7,10)=="RUN" then
+                rednet.broadcast("running queue")
+                t = QUEUE
+                cmd = tfuncs.build_code_from_table(t)
+                job = loadstring(cmd)
+                job()
+            elseif string.sub(msg,7,11)=="SAVE" then
+                t = QUEUE
+                qf = fs.open(QFILE, "w")
+                for k,v in pairs(t) do
+                    cmd = tostring(v).."\n"
+                    qf.write(cmd)
+                end
+                qf.close()
+            elseif string.sub(msg,7,11)=="LOAD" then
+                if fs.exists(QFILE) then
+                    qf = fs.open(QFILE, "r")
+                    QUEUE={}
+                    repeat
+                        msg=qf.readLine()
+                        QUEUE[#QUEUE+1] = msg
+                    until msg==nil
+                    qf.close()
+                else
+                    print("Queuefile "..QFILE.." not found. skipping")
+                end
+            end
+        elseif string.sub(msg,1,6)=="SHELL:" then
+            -- run the given string afer "SHELL:"
+            -- within a shell
+            msg = string.sub(msg,7)
+            print("debug: shell-run("..msg..")")
+            shell.run(msg)
+        elseif string.sub(msg,1,6)=="DETACH" then
+            rednet.broadcast("detaching from remote control.")
+            -- end the program
+            break
+        else
+            if QUEUEING then
+                QUEUE[#QUEUE+1] = msg
+            else
+                -- in any other case try to build some
+                -- lua code from the strings sent
+                job = loadstring(msg)
+                job()
+            end
+        end
+    end 
+end
+
+
+function simple_receiver4()
+    local QUEUE = {}        -- store commands
+    local QUEUEING = false  -- currently queueing?
+
+    while 1 do
+        -- loop forever
+        sender,msg,dist = rednet.receive(TIMEOUT)
+        if msg==nil then
+            -- do nothing, it's just the rednet timing out
+            -- going for another loop
+        elseif string.sub(msg,1,5)=="QUEUE" then
+            if string.sub(msg,7,10)=="NEW" then
+                QUEUEING=true
+                QUEUE={}
+            elseif string.sub(msg,7,10)=="END" then
+                QUEUEING = false
+            elseif string.sub(msg,7,10)=="RUN" then
+                rednet.broadcast("running queue")
+                t = QUEUE
+                tfuncs.cmdqueue_execute(t)
+            elseif string.sub(msg,7,11)=="SAVE" then
+                t = QUEUE
+                tfuncs.cmdqueue_save(QFILE, t)
+                rednet.broadcast("saved queue information")
+            elseif string.sub(msg,7,11)=="LOAD" then
+                QUEUE = tfuncs.cmdqueue_load(QFILE)
+                rednet.broadcast("loaded queue from file")
+            end
+        elseif string.sub(msg,1,6)=="SHELL:" then
+            -- run the given string afer "SHELL:"
+            -- within a shell
+            msg = string.sub(msg,7)
+            print("debug: shell-run("..msg..")")
+            shell.run(msg)
+        elseif string.sub(msg,1,6)=="DETACH" then
+            rednet.broadcast("detaching from remote control.")
+            -- end the program
+            break
+        else
+            if QUEUEING then
+                -- queueing mode enabled
+                -- just storing all commands
+                QUEUE[#QUEUE+1] = msg
+            else
+                -- in any other case try to build some
+                -- lua code from the strings sent
+                job = loadstring(msg)
+                job()
+            end
+        end
+    end 
+end
+
+
+function simple_receiver5()
+    local QUEUE = {}        -- store commands
+    local QUEUEING = false  -- currently queueing?
+    local MASTERS = nil
+
+    MASTERS = tfuncs.rednet_master_load()
+    if MASTERS then
+        mstr = tostring(json.encode(MASTERS))
+        print('obeying '..mstr)
+        rednet.broadcast('obeying '..mstr)
+    end
+
+    while MASTERS do
+        -- loop forever
+        sender,msg,dist = rednet.receive(TIMEOUT)
+        if helpers.contains(MASTERS, sender) then
+            if msg==nil then
+                -- do nothing, it's just the rednet timing out
+                -- going for another loop
+            elseif string.sub(msg,1,5)=="QUEUE" then
+                if string.sub(msg,7,10)=="NEW" then
+                    QUEUEING=true
+                    QUEUE={}
+                    print("new queue")
+                elseif string.sub(msg,7,10)=="END" then
+                    QUEUEING = false
+                    print("queue ended")
+                elseif string.sub(msg,7,10)=="RUN" then
+                    rednet.broadcast("running queue")
+                    print("running queue")
+                    t = QUEUE
+                    tfuncs.cmdqueue_execute(t)
+                elseif string.sub(msg,7,11)=="SAVE" then
+                    t = QUEUE
+                    tfuncs.cmdqueue_save(QFILE, t)
+                    rednet.broadcast("saved queue information")
+                    print("saved queue information")
+                elseif string.sub(msg,7,11)=="LOAD" then
+                    QUEUE = tfuncs.cmdqueue_load(QFILE)
+                    rednet.broadcast("loaded queue from file")
+                    print("loaded queue information")
+                end
+            elseif string.sub(msg,1,6)=="SHELL:" then
+                -- run the given string afer "SHELL:"
+                -- within a shell
+                msg = string.sub(msg,7,-1)
+                print("debug: shell-run '"..msg.."'")
+                space = string.find(msg, "%s")
+                if space then
+                    params = string.sub(msg,space+1)
+                    msg = string.sub(msg,1,space-1)
+                else
+                    params = ""
+                end
+                print("debug: msg    '"..msg.."'")
+                -- shell.run(msg) -- shell API not loaded
+                params = helpers.split(params," ")
+                print("debug: params '"..json.encode(params).."'")
+                os.run({}, msg, params)
+
+            elseif string.sub(msg,1,6)=="STATUS" then
+                -- broadcast current status
+                print("sending status")
+                status()
+            elseif string.sub(msg,1,6)=="DETACH" then
+                rednet.broadcast("detaching from remote control.")
+                -- end the program
+                break
+            else
+                if QUEUEING then
+                    -- queueing mode enabled
+                    -- just storing all commands
+                    QUEUE[#QUEUE+1] = msg
+                else
+                    -- in any other case try to build some
+                    -- lua code from the strings sent
+                    tfuncs.cmdqueue_execute(msg)
+                end
+            end
+        end
+    end 
+end
+
+
+-- main routine
+-- for TESTING only

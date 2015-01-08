@@ -1,0 +1,11 @@
+#!/usr/bin/env lua
+
+-- trying refuel
+tfuncs.refuel()
+
+write("wie breit ist das Feld (x)? ")
+x = io.read()
+write("Wie lang ist das Feld (y)? ")
+y = io.read()
+
+farming.farm(x,y)

@@ -1,0 +1,4 @@
+#!/usr/bin/env lua
+
+turtle.turnRight()
+turtle.turnRight()

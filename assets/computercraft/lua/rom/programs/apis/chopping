@@ -1,0 +1,169 @@
+#!/usr/bin/env lua
+
+function chop_tree()
+    --[[gräbt nach vorne und dann
+    so lange nach oben bis kein Block
+    mehr darüber ist.
+    Setzt voraus, dass die Turtle erst mal
+    an ein Objekt manövriert wird
+    ]]
+    turtle.down()       -- move one field down
+    turtle.dig()        -- cut first wood
+    turtle.forward()    -- move under trunk
+    
+    -- chop tree (trunk only)
+    -- print("debug: digging/cutting upward")
+    while turtle.detectUp() do
+        -- chop until nothing above detected
+        turtle.digUp()  -- chop above
+        turtle.up()     -- move up
+    end
+
+    -- return to start position
+    -- print("debug: returning")
+    while not turtle.detectDown() do
+        turtle.down()
+    end
+    turtle.back()       -- back to start
+    -- turtle.up()         -- one field up from ground
+end
+
+
+function plant(sapling)
+    --[[pflanzt baum, setzling muss
+    dazu im ersten (links oben) Slot
+    der Turtle sein
+    turtle must be one field above ground
+
+    sapling = slot 1
+    ]]
+    if not sapling then
+        sapling=1
+    else
+        sapling = tonumber(sapling)
+    end
+    if not turtle.detectDown() then
+        turtle.select(sapling)
+        turtle.placeDown()
+    else
+        print("Error: can not plant (down)")
+    end
+end
+
+
+function chop_plant( trees, max )
+    --[[ bewegt Turtle 
+    "trees" Bäume nach vorne,
+    fällt diese,
+    pflanzt neuen Baum.
+
+    legt "max" Felder zurück
+
+    Bäume müssen in gerader Linie stehen!
+    Rückweg befindet sich links neben
+    den Bäumen!
+    ]]
+    local gesamtstrecke = 0
+    local treecount = 0
+    if type(max)~="number" then
+        max = 20
+    end
+    print("max chopping range set to: "..max)
+
+    movement.check_height()
+      
+    for tree = 1,trees do
+        print("going after tree "..tree.." of "..trees..".")
+        strecke = movement.move_to_object()
+        gesamtstrecke = gesamtstrecke + strecke
+        chopping.chop_tree()
+	-- move to plant position
+        turtle.up()
+	turtle.forward()
+        planting.plant()
+	turtle.forward()
+        gesamtstrecke = gesamtstrecke + 2
+    end
+    movement.return_left_of(gesamtstrecke)
+end
+
+
+function plant_chop_loop(trees)
+    --[[plant "trees" number of saplings in a row,
+    return to start, move to field in fornt of first
+    tree position, wait for trunk to appear, chop it,
+    proceed to next tree position - return
+    ]]
+    if not trees then
+      trees = 4
+      print("Error: tree counter set to default of "..trees)
+    end
+    local distance = 5    -- between trees
+    local waits = 10      -- seconds to check for tree trunk
+    print("planting "..trees.." saplings from slot 1")
+    for count = 1,trees do
+      for i = 1,distance do
+        turtle.forward()
+      end
+      movement.check_height()
+      planting.plant()
+    end
+    -- return to start
+    movement.return_left_of(trees*distance)
+    print("starting chopping mode ...")
+    -- move to first tree pos and wait
+    for count = 1,trees do
+      -- to end up one field in front
+      -- of first tree trunk pos
+    for i = 1,distance do
+      if i == 1 then
+        i = i+1     -- skip one field
+      end
+      turtle.forward()
+    end
+    movement.check_height()
+    -- wait for tree trunk to appear
+    while not turtle.detect() do
+        sleep(waits)
+    end
+    -- now there's a tree trunk in front
+    chopping.chop_tree()
+    end
+    -- return to start
+    movement.return_left_of( (trees*distance)-1 )
+end
+
+
+function plant_bone_chop_loop(loopcounter)
+    --[[ plants tree, places bone powder on it
+    and chops it down - repeat
+    sapling = 1
+    bonepowder = 2
+    ]]
+    local sapling = 1       -- defined in plant(), too
+    local bonepowder = 2    -- slot in turtle
+    local wait = 60         -- wait secs for leaves to disappear
+    if not loopcounter then
+        loopcounter=1
+    else
+        loopcounter = tonumber(loopcounter)
+    end
+
+    for i = 1,loopcounter do
+        -- material check
+        tfuncs.has_material(sapling)
+        tfuncs.has_material(bonepowder)
+        -- move and plant
+        movement.check_height()
+        turtle.forward()
+        planting.plant(sapling)    -- plant sapling
+        turtle.back()
+        turtle.down()       -- position to apply bonepowder
+        turtle.select(bonepowder)
+        turtle.place()      -- bonepowder to grow tree
+        chopping.chop_tree()
+        sleep(wait)         -- wait for leaves to disappear
+    end
+end
+
+

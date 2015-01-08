@@ -1,0 +1,46 @@
+#!/usr/bin/env lua
+
+function plant()
+      --[[pflanzt baum, setzling muss
+      dazu im ersten (links oben) Slot
+      der Turtle sein
+      turtle must be one field above ground
+
+      sapling = slot 1
+      ]]
+      --if not type(sapling)=="number" then
+          local sapling = 1
+      --end
+      if not turtle.detectDown() then
+          turtle.select(sapling)
+          if not turtle.placeDown() then
+              print("Error: can not plant (down)")
+          end
+      end
+end
+
+function plant_more(counter)
+      --[[pflanzt baum, setzling muss
+      dazu im ersten (links oben) Slot
+      der Turtle sein
+      turtle must be one field above ground
+
+      sapling = slot 1
+      ]]
+      --if not type(sapling)=="number" then
+      local slot
+      slot = (counter/64)+1
+      --end
+      if not turtle.detectDown() then
+          turtle.select(slot)
+          if turtle.placeDown() then
+              return true
+          else
+              return false
+          end
+      else
+          print("Error: can not plant (down)")
+          return false
+      end
+end
+

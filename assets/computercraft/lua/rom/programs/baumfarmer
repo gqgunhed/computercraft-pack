@@ -1,0 +1,184 @@
+#!/usr/bin/env lua
+-- script um automatisch Baeume zu farmen
+-- aber stabiler als bisheriger zcchopper
+--
+
+local lang = 0              -- wie viele bäume nach vorne?
+local breit = 0             -- wie viele baumreiehn zur seite?
+local parkabstand = 3       -- felder von der parkposition weg
+local abstand = 4           -- wie viele felder zwischen den Bäumen (x+y)?
+local menge = 0             -- anzahl setzlinge
+-- slots
+local sapling = 1           -- wo sind die Setzlinge?
+local torch = 2             -- wo sind Fackeln?
+local torching = false      -- Fackeln setzen
+
+
+function setzling()
+    turtle.select(sapling)
+    turtle.placeDown()
+end
+
+function fackel()
+    turtle.select(torch)
+    if not turtle.compareDown() then
+        turtle.digDown()
+        -- no torch below, placing on
+        turtle.placeDown()
+    end
+    turtle.select(1)
+end
+
+
+function hackestamm()
+    local altitude = 0
+    while turtle.detectUp() do
+        while not turtle.up() do
+            turtle.digUp()
+            turtle.attackUp()
+        end
+        altitude = altitude + 1
+    end
+    -- chopping finished, back to ground
+    if altitude>0 then
+        dig2.down(altitude)
+    end
+end
+
+function schleife()
+    for bcount = 1, breit do
+        for lcount = 1,lang do
+            if torching then
+                fackel()
+            end
+            dig2.forward()      -- in den Stamm rein
+            turtle.select(sapling)
+            if not turtle.compareDown() then
+                -- kein Setzling unter der Turtle
+                turtle.digDown()    -- nur unten den Stamm weghacken
+                hackestamm()        --  Stamm nach oben weghacken
+                setzling()
+            end
+            if lcount<lang then
+                -- zum nächsten Baum
+                dig2.forward(abstand)
+            end
+        end
+        if bcount%2==1 and bcount<breit then
+            -- ungerade reihe 1,3,5,...
+            dig2.forward()
+            turtle.turnLeft()
+            dig2.forward(abstand+1)
+            turtle.turnLeft()
+        elseif bcount%2==0 and bcount<breit then
+            -- gerade reihe 2,4,6,...
+            dig2.forward()
+            turtle.turnRight()
+            dig2.forward(abstand+1)
+            turtle.turnRight()
+        else
+            -- finished
+            print("Done.")
+        end
+    end
+end
+
+function parkposition()
+    -- back to start
+    if breit%2==1 then
+        -- ungerade anzahl reihen, also erst zurück
+        turtle.turnLeft()
+        dig2.forward()
+        turtle.turnLeft()
+        -- ganze reihe zurück
+        dig2.forward((lang-1)*(abstand+1)+1)
+        turtle.turnLeft()
+        dig2.forward()
+    else
+        dig2.forward()
+        turtle.turnLeft()
+    end
+    -- the breit-row back
+    dig2.forward((breit-1)*(abstand+1))
+    -- now at begining, 
+    turtle.turnRight()
+    dig2.forward(parkabstand)
+    turtle.turnLeft()
+    turtle.turnLeft()
+end
+
+
+function startposition()
+    -- von der parkposition an die 
+    -- erste Arbeitsposition fahren
+    dig2.forward(parkabstand)
+end
+
+
+function ausladen()
+    local minvalue  -- lowest slot to drop out
+    if torching then
+        -- torches were used, so keep that slot
+        minvalue=3
+    else
+        -- no torches, so drop everything except
+        -- the saplings
+        minvalue=2
+    end
+    for i=minvalue,16 do
+        turtle.select(i)
+        turtle.dropDown(turtle.getItemCount(i))
+    end
+    turtle.select(1)
+end
+
+function check_has_torches()
+    if tonumber(turtle.getItemCount(torch))>0 then
+        torching = true
+    else
+        torching = false
+    end
+end
+
+
+-- main routine here
+-- info()
+--
+local tArgs = {...}
+if #tArgs==2 then
+    lang = tArgs[1]
+    breit = tArgs[2]
+else
+    if type(tArgs[1])=="list" then
+        lang = tArgs[1][1]
+        breit = tArgs[1][2]
+    else 
+        print("Wie viele Baeume hintereinander?")
+        lang = tonumber(io.read())
+        if lang==0 or lang==nil then
+            error(0)
+        end
+        print("Wie viele Baumreihen nebeneinander?")
+        breit = tonumber(io.read())
+        if breit==0 or breit==nil then
+            error(0)
+        end
+    end
+end
+
+-- check sapling number
+menge = lang*breit
+print(menge.." Setzlinge in Slot "..sapling.." einfuellen.")
+tfuncs.ensure_material(sapling, menge)
+
+-- check torches number
+print(menge.." Fackeln in Slot "..torch.." einfuellen (optional).")
+print("Aufwaermen 5 secs.")
+sleep(5)
+check_has_torches()
+
+-- start moving
+startposition()
+schleife()
+parkposition()
+ausladen()

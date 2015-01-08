@@ -1,0 +1,68 @@
+#!/usr/bin/env lua
+
+--[[ script to chop the trees in NPC-city
+  1.) position turtle in south/west-corner
+      of the wood-park, aligned with the first trees
+  2.) fill slot 1 with saplings (17x min)
+  3.) check that all leaves in height 1 are cut off
+      --> in the line of the trunks and left of them
+      before turtle starts
+  ]]
+
+os.loadAPI("/rom/programs/gunhed/chopping")
+os.loadAPI("/rom/programs/gunhed/planting")
+os.loadAPI("/rom/programs/gunhed/movement")
+os.loadAPI("/rom/programs/gunhed/tfuncs")
+
+
+-- trying refuel
+tfuncs.refuel()
+
+-- ausparken
+print("Warming up for 5 seconds.")
+print("Get out of my way!")
+sleep(5)
+
+turtle.forward()
+turtle.forward()
+turtle.forward()
+turtle.turnLeft()
+turtle.forward()
+turtle.forward()
+turtle.forward()
+turtle.forward()
+turtle.forward()
+turtle.forward()
+turtle.turnRight()
+
+
+print("begin chopping+planting trees")
+chopping.chop_plant(5,43)	-- only five trees here
+movement.strafe_right(8)	-- go for second row
+chopping.chop_plant(6,43)	-- six trees here
+movement.strafe_right(10)	-- go for third row
+chopping.chop_plant(6,43)	-- six trees here
+movement.strafe_left(18)	-- back to start
+
+-- done
+
+-- einparken
+turtle.turnRight()
+turtle.forward()
+turtle.forward()
+turtle.forward()
+turtle.forward()
+turtle.forward()
+turtle.forward()
+turtle.turnRight()
+turtle.forward()
+turtle.forward()
+turtle.forward()
+turtle.turnRight()
+turtle.turnRight()
+
+-- drop inventory into chest under it
+for i = 2,16 do
+  turtle.select(i)
+  turtle.dropDown()
+end

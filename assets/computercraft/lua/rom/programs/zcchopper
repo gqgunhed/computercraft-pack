@@ -1,0 +1,53 @@
+#!/usr/bin/env lua
+
+print("Achtung!")
+print("Verwende bitte das neue Programm:")
+print("baumfarmer")
+print("Das ist sicherer und schneller.")
+print("Wenn Du noch Fackeln in Slot 2 packst kannst")
+print("Du eine Plantage incl. Fackeln anlegen.")
+os.error(0)
+
+
+--[[ script to chop the trees in NPC-city
+  1.) position turtle in south/west-corner
+      of the wood-park, aligned with the first trees
+  2.) fill slot 1 with saplings (17x min)
+  3.) check that all leaves in height 1 are cut off
+      --> in the line of the trunks and left of them
+      before turtle starts
+  ]]
+
+-- trying refuel
+tfuncs.refuel()
+
+-- ausparken
+print("Warming up for 5 seconds.")
+print("Get out of my way!")
+sleep(5)
+
+turtle.forward()
+turtle.forward()
+
+
+print("begin chopping+planting trees")
+chopping.chop_plant(8,50)	-- only five trees here
+movement.strafe_left(5)	        -- go for second row
+chopping.chop_plant(8,50)	-- only five trees here
+movement.strafe_left(5)	        -- go for second row
+chopping.chop_plant(8,50)	-- only five trees here
+movement.strafe_left(5)	        -- go for second row
+chopping.chop_plant(8,50)	-- only five trees here
+movement.strafe_right(15)	-- go for second row
+
+-- done
+
+-- einparken
+turtle.back()
+turtle.back()
+
+-- drop inventory into chest under it
+for i = 2,16 do
+  turtle.select(i)
+  turtle.dropDown()
+end

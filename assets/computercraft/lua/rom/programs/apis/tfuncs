@@ -1,0 +1,377 @@
+#!/usr/bin/env lua
+
+local turtleslots = 16      -- capacity of turtle
+local MASTERFILE = "/masters.json"
+
+function refuel(fuelslot)
+    --[[checks if a stack of something is
+    in slot 16 of turtle's inventory
+    ]]
+  
+    -- select fuel-slot
+    fuelslot = tonumber(fuelslot)
+    if not fuelslot then
+        fuelslot = 16       -- slot number
+    end
+    minfuel = 1000        -- minimum fuel to start
+    -- refuel
+    turtle.select(fuelslot)
+    if turtle.getItemCount(fuelslot)>0 then
+        print("Brennstoff in Slot "..fuelslot.." gefunden.")
+        if turtle.refuel() then
+            print("  - Nachtanken erledigt.")
+        else
+            print("  - Material in Slot "..fuelslot.." ist kein Treibstoff.")
+        end
+    else
+        print("Kein Treibstoff gefunden ("..fuelslot..").")
+    end
+  
+    curfuel=turtle.getFuelLevel()
+    if curfuel<minfuel then
+        print("--- wenig Treibstoff ---")
+        print("Zu wenig Treibstoff ("..curfuel..").")
+        print("Benoetige mindestens "..minfuel.." Treibstoff, bitte nachtanken.")
+        print("Oder Brennstoff in Slot "..fuelslot.." legen.")
+        os.error(1)
+    end
+end
+
+
+function checkFuelLevel(minfuel)
+    -- checks turtle's fuel level against given minfuel
+    -- to move through
+    minfuel = minfuel + 50
+    curfuel = turtle.getFuelLevel()
+    write("Treibstoff Check: ")
+    --
+    if curfuel<minfuel then
+        print("--- wenig Treibstoff ---")
+        print("Zu wenig Treibstoff ("..curfuel..").")
+        print("Benoetige mindestens "..minfuel.." Treibstoff, bitte nachtanken.")
+        print("Nach dem Nachtanken eventuell mit 'reboot' neustarten.")
+        error(1)
+    else
+        print("Ok! (benoetige "..minfuel..", habe "..curfuel..")")
+    end
+end
+
+
+function detectLeft()
+    --[[checks if left of turtle is a free block
+    ]]
+    turtle.turnLeft()
+    result = turtle.detect()
+    turte.turnRight()
+    return result
+end
+
+function detectRight()
+    --[[checks if left of turtle is a free block
+    ]]
+    turte.turnRight()
+    result = turtle.detect()
+    turtle.turnLeft()
+    return result
+end
+
+
+function alt_slot(slot)
+    --[[ checks turtle inventory if
+    there is another slot with the same
+    object in it
+    @return:  slot-id if found, false if not found
+    ]]
+    local turtleslots = 16    -- turtle has 16 slots
+    local oldslot = tonumber(slot)  -- what to look for?
+    -- begin comparing
+    if oldslot>0 then
+        for i=1,turtleslots do
+            turtle.select(i)
+            -- print("vergleiche alt:"..oldslot.." mit neu: "..i)
+            if i~=oldslot then
+                if turtle.compareTo(oldslot) then
+                    turtle.select(oldslot)
+                    -- print("Alternatives Material in Slot "..i..".")
+                    return i
+                end
+            end
+        end
+    end
+    turtle.select(oldslot)
+    -- print("Kein passendes Material gefunden.")
+    return 0
+end
+
+function ensure_material(slot, minvalue)
+    -- print ("debug: check material available in slot "..slot)
+    if type(minvalue)=="nil" then
+        -- setting default value for minvalue
+        -- minvalue: the minimal amount of items in that slot
+        -- that must be present
+        minvalue=1
+    end
+    -- check for material
+    local slot = tonumber(slot)
+    local result = tonumber(turtle.getItemCount(slot))
+    if result<minvalue then
+        -- need material
+        print("")
+        print("Bitte Material in Slot "..slot.." nachfuellen.")
+        print("Habe: "..result..", brauche: "..minvalue..".")
+        print("Turtle startet automatisch wieder (5 sec Interval)")
+        while result<minvalue do
+            sleep(5)
+            result = turtle.getItemCount(slot)
+        end
+    end
+    return true
+end
+
+function turtle_full()
+    -- check if every slot contains something
+    for i=1,16 do
+        turtle.select(i)
+        local slotcount = turtle.getItemCount(i)
+        if slotcount==0 then
+            -- slot found with nothing in it
+            turtle.select(1)
+            return false
+        end
+    end
+    -- if script has not returned earlier,
+    -- then there's no empty slot in the turtle
+    turtle.select(1)
+    return true
+end
+
+-- transport functions
+function chest_in_front()
+    turtle.select(1)
+    if turtle.detect() then
+        -- object in front of turtle
+        -- now let's see if we can put
+        -- some things into it
+        --
+        -- Works only if there's something in
+        -- the turtle or in the chest
+        if turtle.drop() or turtle.suck() then
+            -- drop into box seems to
+            -- be possible
+            return true
+        else
+            return false
+        end
+    end
+end
+
+function transfer_to_chest(slot)
+    -- transfer items from turtle into
+    -- chest
+    -- if slot==0 then all slots
+    --[[if not chest_in_front() then
+        return
+    end
+    ]]
+    if type(slot)~="number" then
+        -- no number given
+        -- transfer all slots
+        slot=0
+    end
+    if slot>0 and slot<=16 then
+        turtle.select(slot)
+        turtle.drop(turtle.getItemCount(slot))
+    elseif slot==0 then
+        for i=1,16 do
+            turtle.select(i)
+            turtle.drop(turtle.getItemCount(slot))
+        end
+    else
+        print("Fehler: Slot muss zwischen 0 (alle Slots) und 1-16 liegen.")
+    end
+end
+
+function transfer_from_chest()
+    -- transfers items from chest into
+    -- turtle inventory
+    if not chest_in_front() then
+        return
+    end
+    local sucker = true     -- start sucking the chest
+    while sucker do
+        -- suck() as long as possible -> chest empty
+        -- or turtle full
+        sucker = turtle.suck()
+    end
+end
+
+
+--- rednet functions
+
+function gps_locate()
+    -- calculate GPS position
+    -- and send via rednet.broadcast()
+    -- open rednet on right side (turtle default)
+    rednet.open("right")
+    local x, y, z = gps.locate(2)
+    -- returns position of wireless modem
+    -- timeout 2 seconds
+    -- so maybe it's OBOB
+    -- can generate position from turning the turtle
+    if x == nil then
+        print("Nope, still lost :(")
+        return false
+    else
+        print("I am at ",x," ",y," ",z)
+        return x,y,z
+    end
+end
+
+function gps_heading()
+    local gps_heading_val = nil
+    -- move around the wireless modem by turning
+    -- the turtle
+    -- FIXME: gps_locate returns position of the turtle, not modem
+    -- TODO: move (not turn) turtle to get position
+    local p1x,p1y,p1z = gps_locate()
+    turtle.forward()
+    local p2x,p2y,p2z = gps_locate()
+    turtle.back()   -- turn back
+    -- be sure that there are values from gps_locate
+    --if tonumber(p1x)~=0 and tonumber(p2x)~=0 and tonumber(p1z)~=0 and tonumber(p2z)~=0 then
+    if type(p1x)=="number" and type(p1z)=="number" then
+        -- now we can work with the values
+        local xdiff = p2x - p1x
+        -- local ydiff = p2y - p1y  -- irrelevant
+        local zdiff = p2z - p1z
+        -- be careful, rednet sender is
+        -- on the right side of the turtle
+        -- so the following positions denote the
+        -- position of the wireless modem!!!
+        -- AND the turtle is turned back/left!!!
+        if xdiff==0 then
+            -- so turtle moved north-south
+            if zdiff>0 then
+                -- facing north
+                gps_heading=0
+            elseif zdiff<0 then
+                -- facing south
+                gps_heading=2
+            else
+                -- turtle did not move at all
+                gps_heading=nil
+            end
+        else
+            if xdiff>0 then
+                -- turtle moved east
+                gps_heading=1
+            else
+                -- turtle moved west
+                gps_heading=3
+            end
+        end
+    end
+    -- return the results
+    if gps_heading_val==nil then
+        print("Error: gps_heading_val broken!")
+        print("p1x:"..tostring(p1x).."/p2x:"..tostring(p2x).."/xdiff:"..tostring(xdiff))
+        print("p1z:"..tostring(p1z).."/p2z:"..tostring(p2z).."/zdiff:"..tostring(zdiff))
+        return false
+    else
+        print("gps_heading_val = "..tostring(gps_heading_val))
+        return gps_heading_val
+    end
+end
+
+
+-- command queueing
+function cmdqueue_save(f,t)
+    -- f is the filename to save to
+    -- t is the table of commands to save
+    qf = fs.open(f, "w")
+    for k,v in pairs(t) do
+        cmd = tostring(v).."\n"
+        qf.write(cmd)
+    end
+    qf.close()
+end
+
+function cmdqueue_load(f)
+    QUEUE={}
+    if fs.exists(f) then
+        qf = fs.open(f, "r")
+        repeat
+            msg=qf.readLine()
+            QUEUE[#QUEUE+1] = msg
+        until msg==nil
+        qf.close()
+    else
+        print("Queuefile "..QFILE.." not found. skipping")
+    end
+    return QUEUE
+end
+
+function cmdqueue_execute(t)
+    cmd = build_code_from_table(t)
+    job = loadstring(cmd) 
+    job()
+end
+
+function build_code_from_table(t)
+    cmd = ""
+    for k,v in pairs(t) do
+        v = tostring(v)
+        cmd = cmd.." "..v
+    end
+    return cmd
+end
+
+function rednet_master_load()
+    local masters = helpers.json_from_file(MASTERFILE)
+    if masters==nil then
+        print("Error: no "..MASTERFILE.." found.")
+        print("Run: 'rednet_masters' first.")
+    end
+    return masters
+end
+
+function rednet_masters_write()
+    print('Welche IDs duerfen steuern?')
+    print('Leereingabe für Ende')
+    masters = {}
+    repeat
+        write('ID: ')
+        id = tonumber(io.read())
+        if id then
+            -- insert into masters-table
+            masters[#masters+1] = id
+        end
+    until id==nil
+    helpers.json_to_file(MASTERFILE, masters)
+end
+
+
+function beladung(t)
+    if type(t)=="table" then
+        print("Beladung")
+        print("------------------------")
+        for k,v in pairs(t) do
+            helpers.printf("%2d ... %s\n", k, v)
+        end
+        print("------------------------")
+    else
+        print("Error: beladung() muss mit table als Parameter aufgerufen werden.")
+    end
+    print()
+end
+
+
+function activate_rednet()
+    -- functio to cycle through all sides
+    -- of computer/turtle and activate 
+    -- rednet if possible
+    --
+    for _, side in pairs(redstone.getSides()) do 
+        rednet.open(side)
+    end 
+end

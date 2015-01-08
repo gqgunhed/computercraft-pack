@@ -1,0 +1,47 @@
+#!/usr/bin/env lua
+
+local sapling = 1   -- put saplings into that slot
+
+
+function intro()
+    print ("Einzelbaumfaeller")
+    print ("=================")
+    print ("Turtle prueft ob Objekt vor sich.")
+    print ("Wenn ja, faellt dieses.")
+    print ("Pflanzt danach neuen Setzling aus Slot "..sapling..".")
+end
+
+function mainloop()
+    tfuncs.ensure_material(sapling)
+    turtle.down()
+    while true do
+        turtle.select(sapling)
+        if turtle.detect() then
+            -- ensure there are saplings in slot 1
+            tfuncs.ensure_material(sapling)
+            -- compare object in front of turtle with
+            -- object in turtle.slot-1
+            if turtle.compare()==false then
+                -- tree in front or, at least, something
+                -- other than the material in turtle.slot-1
+                chopping.chop_tree()
+                turtle.digUp()    -- if there are leaves
+                movement.check_height()
+                turtle.dig()      -- if there are leaves
+                turtle.forward()
+                chopping.plant(sapling)
+                turtle.back()
+                turtle.down()
+            -- else
+                -- print("debug: Setzling vor Turtle. Ignoriere.")
+            end
+        -- else
+            -- print("debug: nichts vor turtle")
+        end
+        sleep(5)   -- to reduce server load?
+    end
+end
+
+--- main routine here -----------
+intro()
+mainloop()

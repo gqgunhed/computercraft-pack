@@ -1,0 +1,31 @@
+#!/usr/bin/env lua
+print("GPS HOST Startup")
+print("")
+print("X-Koordinaten: ")
+x = io.read()
+print("Y-Koordinaten: ")
+y = io.read()
+print("Z-Koordinaten: ")
+z = io.read()
+print("Wo ist das Rednet-Modul (top,back,left,right)?: ")
+wloc = io.read()
+
+gps_string = "gps host "..x.." "..y.." "..z
+print ("programming GPS: "..gps_string)
+
+-- shell.run(gps_string)
+-- TODO: computer label should be deleted to enable
+-- killing the startup file by destroying the computer
+
+-- write to startup-file in / of device
+f = fs.open("startup","w")
+    t = "sleep(5) --  wait 5 seconds for power-up"
+    print ("debug: "..t)
+    f.writeLine(t.."\n")
+    t = "rednet.open(\""..wloc.."\")"
+    print ("debug: "..t)
+    f.writeLine(t.."\n")
+    t = "shell.run(\""..gps_string.."\")"
+    print ("debug: "..t)
+    f.writeLine(t.."\n")
+f.close()

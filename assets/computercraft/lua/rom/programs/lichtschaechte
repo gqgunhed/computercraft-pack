@@ -1,0 +1,19 @@
+#!/usr/bin/env lua
+
+print ("Turtle fuer Lichtschaechte")
+print ("==========================")
+print ("Turtle graebt senkrechte Schaechte nach oben bis zum naechsten Hohlraum (muss ja nicht die Oberflaeche sein).")
+print ("Dazwischen 2 Felder horizontaler Abstand vom Startpunkt weg.")
+print ("Wie viele Lichtschaechte?")
+
+num = io.read()
+num = tonumber(num)
+-- print ("digging "..num.." times")
+
+for i=1,num do
+    dig.lichtschacht()
+    if i<num then
+       turtle.forward()
+       turtle.forward()
+    end
+end

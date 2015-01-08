@@ -1,0 +1,30 @@
+#!/usr/bin/env lua
+-- next API test
+
+local x = 13
+local bool = true
+local y = "y-string"
+
+function printer()
+    print("x    (global) = "..x)
+    print("y    (local)  = "..y)
+    print("bool (global) = "..tostring(bool))
+    x = x+1
+end
+
+function change()
+    x,y=y,x
+    if type(x)=="number" then
+        x = x*x
+    end
+end
+
+function main(x)
+    x = tonumber(x)
+    print("x wurde als "..x.. "uebergeben.")
+    for i=1,3 do
+        sleep(x)
+        printer()
+        change()
+    end
+end

@@ -1,0 +1,51 @@
+#!/usr/bin/env lua
+
+local returning = true
+local bridging = false
+local sealing = false
+local break_no_material = false
+local torching = false
+
+-- TODO: Feature-Request: Turtle zwischendurch zurück an Start zum entladen
+-- TODO: Turtle muss vor Beginn testen, ob Kiste "hinter" Startposition steht - wg. Entladen
+
+
+function beladungsinfo()
+    local t = {}
+    t[1] = "Bodenplatten"
+    -- t[2] = "Bodenplatten" -- Abfrage unten deaktiviert
+    t[4] = "Fackeln"
+    tfuncs.beladung(t)
+end
+
+--- main routine starts here ---
+
+print("Tunnelprogramm v2")
+print("=================")
+write("Tunnel Breite (x)? ")
+x = tonumber(io.read())
+write("Tunnel Hoehe (y)? ")
+y = tonumber(io.read())
+-- TODO: bei negativem Wert soll der Tunnel nach unten gegraben werden
+write("Tunnel Laenge (z)? ")
+z = tonumber(io.read())
+
+-- neu
+beladungsinfo()
+
+
+returning = helpers.answer_yes("Am Ende wieder auf Startposition (j/n)?") 
+bridging = helpers.answer_yes("Bodenplatten legen (Bruecke, Material aus SLOT 1) (j/n)?")
+torching = helpers.answer_yes("Fackeln aus SLOT 4 auf dem Rueckweg anbringen (j/n)?")
+
+print ("debug: x="..x.."/y="..y.."/z="..z.."/return="..tostring(returning).."/bridge="..tostring(bridging).."/seal="..tostring(sealing).." ")
+
+
+-- begin digging
+dig2.set_debugging(false)
+dig2.set_returning(returning)
+dig2.set_bridging(bridging)
+dig2.set_sealing(sealing)
+dig2.set_torching(torching)
+-- dig2.tunnel(x,y,z,returning,bridging,sealing)
+dig2.tunnel(x,y,z)

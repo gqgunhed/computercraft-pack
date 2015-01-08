@@ -1,0 +1,476 @@
+#!/usr/bin/env lua
+
+-- function init_digger()
+-- THIS IS A GLOBAL SETTING !!!
+-- If this file is executed you will have a digger-turtle
+
+--[[ for all functions to work properly
+    the following slots may only be used for 
+    specific payloads/presets:
+    ]]
+    rock = 1      -- e.g. for bridging or under staircase
+    stair = 2     --
+    torch = 3     -- for lighting
+    redtorch = 4  -- for booster-rails
+    seal = 0
+    bridging = false
+--[[ This will allow a turtle to be used for different tasks
+    without re-arranging the preset goods. So one can
+    combine digging caves, placing torches, placing dirt on floor
+    with one setting of goods
+    ]]
+
+    waits = 0.5     -- wait seconds before continue digging/moving
+-- end
+
+function digger()
+    --dig and wait
+    while turtle.detect() do
+        if not turtle.dig() then
+            turtle.attack()
+        end
+        sleep(waits)
+    end
+end
+
+function diggerUp()
+    --dig and wait
+    while turtle.detectUp() do
+        if not turtle.digUp() then
+            turtle.attackUp()
+        end
+        sleep(waits)
+    end
+end
+
+function diggerDown()
+    --dig and wait
+    while turtle.detectDown() do
+        if not turtle.digDown() then
+            turtle.attackDown()
+        end
+        sleep(waits)
+    end
+end
+
+
+function place_torch()
+    --[[ floats turtle up,
+    checks for wall,
+    attaches torch
+    ]]
+    local height = 3      -- height of torches above ground
+    local torchplaced = false
+    local function place()
+        turtle.select(torch)
+        print("placing torch")
+        turtle.place()
+        torchplaced = true
+    end
+    -- dig/float up
+    for i = 1,height do
+        dig.diggerUp()
+        turtle.up()
+    end
+    turtle.turnRight()
+    -- wall on the right side?
+    if turtle.detect() then
+        place()
+        turtle.turnLeft()
+    else
+        -- try left wall?
+        turtle.turnLeft()
+        turtle.turnLeft()
+        if not turtle.detect() then
+            -- no rock here too, but let's see
+            -- if we can use one from inventory
+            turtle.select(rock)
+            turtle.place()
+        end
+        if turtle.detect() then
+            place()
+        end
+        turtle.turnRight()
+    end
+    -- back to floor
+    for i = 1,height do
+        turtle.down()
+    end
+    -- return with result
+    if torchplaced then
+        return true
+    else
+        return false
+    end
+end
+  
+
+function gang_hoehe ( hoehe )
+    --[[ erstelle einen Schacht mit
+    der angegebenen hoehe.
+    Verwendbar z.B. für Treppen.
+    ]]
+    local upward = true         -- normally dig upwards
+    hoehe = tonumber(hoehe)
+
+    if hoehe < 0 then
+        upward = false
+        hoehe = abs(hoehe)
+        print ("digging "..hoehe.." fields down")
+    elseif hoehe==0 then
+        print ("minimu height set to 1")
+        hoehe = 1
+    end
+
+    hoehe = hoehe - 1 -- sonst ist der Gang ein Feld zu hoch
+    -- begin digging
+    for i = 1,hoehe do
+        if upward then
+            dig.diggerUp()
+            if i<hoehe then
+                turtle.up()
+            end
+        else
+            dig.diggerDown()
+            if i<hoehe then
+                turtle.down()
+            end
+        end
+    end
+    for i = 1,hoehe-1 do
+        -- hoehe-1, weil das letzte turtle.up() entfallen ist
+        if upward then
+            turtle.down()
+        else
+            turtle.up()
+        end
+    end
+    -- place rock underneath
+    if not turtle.detectDown() and upward then
+        --if not turtle.detectDown() and bridging and upward then
+        print("no ground, placing rock")
+        turtle.select(1)
+        turtle.placeDown()
+    end
+end
+
+function grabe_rechts()
+    --[[gräbt ein Feld nach
+    rechts und richtet Turtle
+    wieder nach vorne aus
+    ]]
+    turtle.turnRight()
+    dig.digger()
+    turtle.forward()
+    turtle.turnLeft()
+end
+
+function grabe_links()
+    --[[gräbt ein Feld nach
+    links und richtet Turtle
+    wieder nach vorne aus
+    ]]
+    turtle.turnLeft()
+    dig.digger()
+    turtle.forward()
+    turtle.turnRight()
+end
+
+
+function gang_breite (breite)
+    --[[ gräbt einen Streifen
+    nach rechts
+    zur Seite, richtet aber die
+    Turtle immer wieder nach
+    vorne aus
+    ]]
+    -- zur Seite graben
+    for i = 1,breite do
+        dig.grabe_rechts()
+    end
+    -- wieder zurück zum Start
+    turtle.turnLeft()
+    for i = 1,breite do
+        turtle.forward()
+    end
+    turtle.turnRight()
+end
+
+function gang_breite_hoehe (breite,hoehe)
+    --[[ gräbt einen Gang mit "breite"-
+    Feldern nach rechts und "hoehe"-Feldern
+    nach oben
+    ]]
+    -- zahlen erstellen
+    breite = tonumber(breite)
+    hoehe = tonumber(hoehe)
+    -- zur Seite graben
+    for i = 1,breite do
+        -- if i>1 and i<=breite then
+        if i>1 then
+            dig.grabe_rechts()
+        end
+        -- nach oben buddeln
+        dig.gang_hoehe(hoehe)
+    end
+    -- wieder zurück
+    if breite>1 then
+        turtle.turnLeft()
+        for i = 1,breite-1 do
+            turtle.forward()
+        end
+        turtle.turnRight()
+    end
+end
+
+function tunnel_bht (breite,hoehe,tiefe,returner,seal)
+    --[[gräbt einen Gang "tiefe" Felder lang
+    mit den Abmessungen breite x hoehe
+
+    Gemessen vom Ausgangspunkt der Turtle nach:
+    rechts, oben und vorwärts
+    ]]
+    -- zahlen normalisieren
+    breite = tonumber(breite)
+    hoehe = tonumber(hoehe)
+    tiefe = tonumber(tiefe)
+
+    -- return the turtle after digging?
+    if not returner or tonumber(returner)==0 then
+        print("turtle kommt nicht wieder.")
+        returner = false
+    else
+        print("turtle kommt wieder zum Start.")
+        returner = true
+    end
+    -- seal the tunnel?
+    if not seal or tonumber(seal)==0 then
+        seal = false
+    else
+        seal = true
+    end
+
+    -- commence digging!
+    for count = 1,tiefe do
+        if count == 1 then
+            print("breaking first rock.")
+        end
+        dig.digger()
+        turtle.forward()
+        dig.gang_breite_hoehe ( breite, hoehe )
+        if seal then
+            dig.seal(breite,hoehe)
+        end
+        -- print ("Gang ist jetzt "..count.." Felder lang.")
+    end
+
+    -- does the turtle come back?
+    if returner then
+        print("turtle is returning.")
+        for count = 1,tiefe do
+            turtle.back()
+        end
+    end
+end
+
+
+
+function seal (breite,hoehe,slot)
+    --[[ seals all fields from slot 1
+    ]]
+    
+    if slot then
+        slot = tonumber(slot)
+    else
+        slot = 1
+    end
+    print ("sealing with material from slot "..slot)
+    turtle.select(slot)
+    -- start must be lower left corner
+    turtle.turnRight()
+    if not turtle.detectDown() then
+        turtle.placeDown()
+    end
+    -- work to the right
+    for i = 1,breite-1 do
+        turtle.forward()
+        if not turtle.detectDown() then
+            turtle.placeDown()
+        end
+    end
+    -- now upway
+    if not turtle.detect() then
+        turtle.place()
+    end
+    for i = 1,hoehe-1 do
+        turtle.up()
+        if not turtle.detect() then
+            turtle.place()
+        end
+    end
+    -- ceiling
+    turtle.turnRight()
+    turtle.turnRight()
+    if not turtle.detectUp() then
+        turtle.placeUp()
+    end
+    for i = 1,breite-1 do
+        turtle.forward()
+        if not turtle.detectUp() then
+            turtle.placeUp()
+        end
+    end
+    -- left wall down
+    if not turtle.detect() then
+        turtle.place()
+    end
+    for i = 1,hoehe-1 do
+        turtle.down()
+        if not turtle.detect() then
+            turtle.place()
+        end
+    end
+    -- turn to old front
+    turtle.turnRight()
+end
+
+
+--[[ ab hier kommen Funktionen um Treppen
+     zu buddeln
+  ]]
+
+
+
+function stufe_runter ()
+    --[[ buddelt ein feld nach vorne
+    und dann eines nach unten.
+    Parkt die Turtle unten auf der
+    Stufe.
+    ]]
+    dig.digger()
+    turtle.forward()
+    dig.diggerDown()
+    turtle.down()
+end
+
+function stufe_hoch ()
+    --[[buddelt ein Feld nach oben
+    und dann nach vorne.
+    Parkt die Turtle oben auf der
+    Stufe.
+    ]]
+    dig.diggerUp()
+    turtle.up()
+    dig.digger()
+    turtle.forward()
+end
+
+function treppenstufen ( anzahl )
+    --[[ setzt der reihe nach 
+    --treppenstufen ersten slot der turtle
+    --stein o.Ä. im zweiten Slot
+    ]]
+    stair = 1  -- steps to place
+    rock = 2  -- rocks to attach to steps
+    if turtle.detect() then
+        -- move turtle back if placed directly at
+        -- the beginning of the stairs
+        turtle.back()
+    end
+    for i = 1,anzahl do
+        print ("step no. "..i)
+        -- move over next "stone"?
+        turtle.forward()
+        while not turtle.detectDown() do
+            -- there's no stone underneath, but can be attached
+            -- to previous step
+            turtle.select(rock)
+            turtle.placeDown()
+        end
+        -- place steps
+        turtle.up()
+        turtle.select(stair)      -- treppenstufen
+        turtle.placeDown()
+    end
+end
+
+
+function treppe_gerade ( anzahl )
+    --[[gräbt eine gerade Treppe
+    mit Anzahl "anzahl" Stufen dazwischen
+
+    in slot(1) muss ein Stapel
+    Treppenstufen gepack werden bevor
+    es losgeht
+    ]]
+    if not anzahl then
+        print ("treppen_gerade[Error]: Anzahl der Treppenstufen muss angegeben werden.")
+        exit()
+        return false
+    else
+        anzahl = tonumber(anzahl)
+    end
+    
+    local eben  = 3     -- wie lang ist der gang am ende der treppe?
+    local hoehe = 5     -- Höhe Treppenhaus
+
+    for counter = 1,anzahl do
+        print(counter..". Stufe von "..anzahl)
+        dig.stufe_runter()
+        dig.gang_hoehe( hoehe )
+    end
+
+    -- bottom level reached
+    -- reducing height
+    if hoehe > 2 then
+        hoehe = hoehe -1
+    end
+    for i = 1,eben do
+        dig.digger()
+        turtle.forward()
+        dig.gang_hoehe( hoehe )
+    end
+    -- zurück und stufen einsetzen
+    turtle.turnRight()
+    turtle.turnRight()
+    for i = 1,eben do
+        turtle.forward()
+    end
+    -- treppenstufen setzen
+    print ("und wieder "..anzahl.." stufen zurück")
+    dig.treppenstufen( anzahl )
+end
+
+
+function lichtschacht(y)
+    -- digs up until reaching the surface
+    -- optional: y - to dig max fields up
+    local ycount = 0
+    local ceiling = 255
+    tfuncs.checkFuelLevel(512)
+    if not y then
+        -- dig until nothing above
+        while turtle.detectUp() and ycount<ceiling do
+            dig.diggerUp()
+            turtle.up()
+            ycount = ycount+1
+        end
+    else
+        y = tonumber(y)
+        if y>ceiling then
+            y = ceiling
+        end
+        -- go for specific height
+        print("digging up "..y.." fields.")
+        for i = 1,y do
+            dig.diggerUp()
+            turtle.up()
+            ycount = ycount+1
+        end
+    end
+    -- returning to ground
+    print("max height: "..ycount..".")
+    for i = 1,ycount do
+        turtle.down()
+    end
+end

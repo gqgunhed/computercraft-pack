@@ -1,0 +1,82 @@
+#!/usr/bin/env lua
+
+function _f_back(x,y)
+    --[[ function to return home from an x-y-field
+        returns to "0"
+        -- x must be the row to return from!
+        -- y is the length of the field
+        turtle calculates if it is on the far end of the
+        y-line or not (1st row = true, 2nd row=false, etc.)
+        +-----+
+        y     |
+        |     |
+        +--x--+
+        0
+    ]]
+    x = x - 1         -- first row is indexed 0
+    if (x%2)==0 then
+        -- has to return a long way
+        -- already facing north
+        turtle.turnLeft()
+        turtle.turnLeft()
+        dig2.forward(y)
+        turtle.turnLeft()
+        turtle.turnLeft()
+    else
+        -- already "lower" end of field, but
+        -- facing south
+        dig2.forward()
+        turtle.turnLeft()
+        turtle.turnLeft()
+    end
+    -- strafing back
+    --movement.strafe_left(x)
+    turtle.turnLeft()
+    dig2.forward(x)
+    turtle.turnRight()
+end
+
+
+function farm(maxx,maxy)
+    --[[turtle should be parked one field in
+    front of the farming area. so to say
+    the lower left corner
+    ]]
+    movement.check_height()
+    -- begin square farming
+    for x = 1,maxx do
+        --print("farmin row "..x..".")
+        for y = 1,maxy do
+            dig2.forward()
+            turtle.digDown()
+            turtle.suckDown()
+            planting.plant()
+        end
+        if x < maxx then
+            -- at least one more row to go
+            if x%2==1 then
+                -- end of 1st, 3rd, ... row ("north")
+                dig2.forward()
+                turtle.turnRight()
+                dig2.forward()
+                turtle.turnRight()
+            else
+                -- end of 2nd, 4th, .. row ("south")
+                dig2.forward()
+                turtle.turnLeft()
+                dig2.forward()
+                turtle.turnLeft()
+            end
+        end
+    end
+    farming._f_back(maxx,maxy)
+end
+
+function home_()
+    dig2.forward()
+    turtle.turnRight()
+    dig2.forward()
+    dig2.forward()
+    dig2.forward()
+    turtle.turnRight()
+end

@@ -1,0 +1,26 @@
+#!/usr/bin/env lua
+-- api test to check for namespaces
+
+debugging = false
+
+function get_debugging()
+    print("debugging is set to "..tostring(debugging))
+    return debugging
+end
+
+function set_debugging(bool)
+    if type(bool)~="boolean" then
+        print("Error: value must be boolean type.")
+    else
+        debugging = bool
+    end
+end
+
+function nest(bool)
+    -- calls the set_debugging
+    -- function by its single-name
+    -- not with the module name
+    print ("debugging before anything else: "..tostring(debugging))
+    set_debugging(bool)
+    get_debugging()
+end

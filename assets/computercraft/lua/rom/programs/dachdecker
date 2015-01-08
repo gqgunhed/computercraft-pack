@@ -1,0 +1,156 @@
+#!/usr/bin/env lua
+
+-- slot belegung
+local dachplatte = 1
+local erde = 2
+local giebel = 3
+-- counter variablen
+local x = 0         -- width of house/roof
+local y = 0         -- depth of house
+local menge = 0     -- x*y
+
+
+function beladungsinfo()
+    local t = {}
+    t[dachplatte] = "Dachziegel/Stufen"
+    t[erde] = "Unterbau"
+    t[giebel] = "Giebelplatten"
+    tfuncs.beladung(t)
+end
+
+function info()
+    print("Dachdecker-Bot")
+    print("==============")
+    print("Turtle an das linke/untere Ende des Daches stellen, direkt auf das Mauereck.")
+    beladungsinfo()
+end
+
+-- building functions
+function baue_giebel()
+    if not turtle.detect() then
+        -- turtle is in the air
+        -- so place some material
+        turtle.select(erde)
+        turtle.placeDown()
+    end
+    turtle.up()
+    turtle.select(giebel)
+    turtle.placeDown()
+end
+
+function baue_dach()
+    if not turtle.detectDown() then
+        -- turtle is in the air
+        -- so place some material
+        turtle.select(erde)
+        turtle.placeDown()
+    end
+    turtle.up()
+    turtle.select(dachplatte)
+    turtle.placeDown()
+end
+
+-- moving functions
+function roof_up()
+    local max = (math.floor(y/2))
+    for i=1,max do
+        baue_dach()
+        turtle.forward()
+    end
+    if y%2==1 then
+        -- after roof up
+        -- if there is a middle section
+        baue_giebel()
+        turtle.forward()
+        turtle.down()
+    end
+    -- top of roof reached
+    turtle.turnLeft()
+    turtle.turnLeft()
+    -- turtle.back()
+    turtle.down()
+end
+
+function roof_down()
+    local max = (math.floor(y/2))
+    for i=1,max do
+        baue_dach()
+        if i<max then
+            turtle.back()
+            turtle.down()
+            turtle.down()
+        end
+    end
+end
+
+function go_home()
+    if x%2==1 then
+        -- turtle ends on opposite side
+        local height = math.floor(y/2)+1
+        for i=1,height do
+            -- lift turtle over roof
+            turtle.up()
+        end
+        for i=1,y-1 do
+            turtle.forward()
+        end
+        -- turtle on start side of roof
+        turtle.turnRight()
+        for i=1,height do
+            turtle.down()
+        end
+    else
+        turtle.turnLeft()
+    end
+    -- move turtle along the side of the roof
+    -- back to start position
+    -- but now on the roof (start-altitude+1)
+    for i=1,x-1 do
+        turtle.forward()
+    end
+    turtle.turnRight()
+end
+
+
+-- main routine here
+info()
+
+print("Wie lang ist die Mauer nach vorne?")
+y = tonumber(io.read())
+print("Wie lang ist die Mauer nach rechts?")
+x = tonumber(io.read())
+menge = x*y   -- worst case count
+
+-- check material availibily
+print(menge.." Dachplatten/Treppen in Slot "..dachplatte.." legen.")
+tfuncs.ensure_material(dachplatte)
+print("")
+print(menge.." Fuellmaterial (z.B. Erde) in Slot "..erde.." legen.")
+tfuncs.ensure_material(erde)
+if y%2==1 then
+    print("")
+    print("Bitte "..x.." Dachgiebel in Slot "..giebel.." legen.")
+    tfuncs.ensure_material(giebel)
+end
+
+
+-- begin building
+for xpos = 1,x do
+    roof_up()
+    roof_down()
+    -- u-turn for next row
+    if xpos%2==1 and xpos<x then
+        turtle.turnLeft()
+        turtle.forward()
+        turtle.turnRight()
+        turtle.down()   -- cause we placed a rooftile before
+    elseif xpos%2==0 and xpos<x then
+        turtle.turnRight()
+        turtle.forward()
+        turtle.turnLeft()
+        turtle.down()   -- cause we placed a rooftile before
+    else
+        -- going home?
+        go_home()
+    end
+end

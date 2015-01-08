@@ -1,0 +1,31 @@
+#!/usr/bin/env lua
+
+local COUNTER = 0       -- tiefenmesser
+
+function runter ()
+    while not turtle.detectDown() do
+        while not turtle.down()do
+            turtle.attackDown()
+        end
+        COUNTER = COUNTER +1
+    end
+    print("Tiefe: "..COUNTER)
+end
+
+function hoch()
+    local HCOUNT
+    turtle.select(1)
+    for HCOUNT = 1,COUNTER do
+        while not turtle.up() do
+            turtle.attackUp()
+        end
+        turtle.placeDown()
+    end
+end
+
+
+-- main routine here
+turtle.forward()
+runter()
+hoch()
+turtle.back()

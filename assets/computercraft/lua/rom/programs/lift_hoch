@@ -1,0 +1,30 @@
+#!/usr/bin/env lua
+
+while not turtle.detectDown() do
+    turtle.down()
+end
+
+-- beladen
+print("belade")
+for i=1,16 do
+    turtle.suckDown()
+end
+
+-- nach oben
+print("nach oben ...")
+while not turtle.detectUp() do
+    turtle.up()
+end
+
+-- ausladen
+print("ausladen")
+for i=1,16 do
+    turtle.select(i)
+    turtle.dropUp(turtle.getItemCount(i))
+end
+
+-- runter
+print("nach unten ...")
+while not turtle.detectDown() do
+    turtle.down()
+end

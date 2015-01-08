@@ -1,0 +1,563 @@
+#!/usr/bin/env lua
+
+-- boolean values
+local returning = true      -- turtle back to start after work?
+local bridging = false      -- build bridge-tiles under turtle?
+local sealing = false       -- seal ceiling and walls too?
+local debugging = false     -- debugging setting
+local break_no_material = false -- stop working (and return turtle) if no more material for sealing found?
+local torching = false      -- places torches on way back?
+
+-- setting material slots
+local bridgingmaterial = 1  -- initial slot for rock for floor
+local sealingmaterial = 2   -- initial slot for glass or so for walls/ceiling
+local newslot = 0           -- temporary number for alternative slot
+local torches = 4           -- initial slot number for torches, e.g. 16
+
+-- local position counters
+local xdim = 0
+local ydim = 0
+local zdim = 0
+local px = 1 -- x-position
+local py = 1 -- y-position
+local pz = 1 -- z-position
+local pfhor = 0 -- horizontal direction (relative to start 0=N;1=E;2=S;3=W)
+
+
+function debugoutput(text)
+    if debugging then
+        print (tostring(text))
+    end
+end
+
+function selectslot(material)
+    -- local material = tonumber(material)
+    turtle.select(material)
+    local amount = tonumber(turtle.getItemCount(material))
+    debugoutput("selectslot: "..amount.." items in slot "..material..".")
+    if amount==1 then
+        debugoutput("selectslot: material low in slot "..material)
+        -- material running low
+        -- looking for alternative slot
+        newslot = tfuncs.alt_slot(material)
+        if newslot>0 then
+            debugoutput("selectslot: alternative slot "..newslot.." selected")
+        else
+            debugoutput("selectslot: NO matching material found.")
+            if break_no_material then
+                -- stop job and return
+                return_turtle()
+                print("Aborted, no more material!")
+                os.error(1)
+            end
+        end
+    end
+end
+
+function check_front()
+    if not turtle.detect() then
+        debugoutput("check_wall: sealing")
+        selectslot(sealingmaterial)
+        turtle.place()
+        if newslot>0 then
+            -- if there are alternatives
+            sealingmaterial = newslot
+            newslot = 0
+        end
+    end
+end
+
+function turn_turtle()
+    if pfhor==0 then
+        setDir(2)
+    elseif pfhor==1 then
+        setDir(3)
+    elseif pfhor==2 then
+        setDir(0)
+    elseif pfhor==3 then
+        setDir(1)
+    else
+        print("Error: turn_turtle")
+    end
+end
+
+
+function check_wall()
+    --local olddir = pfhor    -- backup direction
+    -- checks with check_front
+    -- but turns the turtle
+    if xdim==1 then
+        check_front()
+        turn_turtle()
+        check_front()
+    else
+        if px==1 then
+            setDir(3)
+            check_front()
+        end
+        if px==xdim then
+            setDir(1)
+            check_front()
+        end
+        --setDir(olddir)  -- turn back to original
+    end
+end
+
+function check_top()
+    if not turtle.detectUp() then
+        debugoutput("check_top: sealing")
+        selectslot(sealingmaterial)
+        turtle.placeUp()
+        if newslot>0 then
+            -- if there are alternatives
+            sealingmaterial = newslot
+            newslot = 0
+        end
+    end
+end
+
+function check_floor()
+    if bridging then
+        if not turtle.detectDown() then
+            debugoutput("check_floor: bridge at y-pos:"..py)
+            selectslot(bridgingmaterial)
+            turtle.placeDown()
+            if newslot>0 then
+                -- if there are alternatives
+                bridgingmaterial = newslot
+                newslot = 0
+            end
+        end
+    end
+    if sealing then
+        if not turtle.detectDown() then
+            debugoutput("check_floor: sealdown at y-pos:"..py)
+            selectslot(sealingmaterial)
+            turtle.placeDown()
+            if newslot>0 then
+                -- if there are alternatives
+                sealingmaterial = newslot
+                newslot = 0
+            end
+        end
+    end
+end
+
+function check_seals()
+    if (bridging or sealing) and py==1 then
+        --if py==1 then
+            debugoutput("check_seals: turtle on ground; py="..py)
+            check_floor()
+        end
+        -- if (px==1 and pfhor==3) or (px==xdim and pfhor==1) then
+    if sealing then
+        if px==1 or px==xdim then
+            debugoutput("check_seals: wall (px="..px.."/py="..py.."/pfhor="..pfhor..")")
+            check_wall()
+        end
+        if py==ydim then
+            debugoutput("check_seals: turtle on top-row; py="..py)
+            check_top()
+        end
+    end
+end
+
+
+function up(dcount)
+    if type(dcount)~="number" then
+        dcount = 1
+    end
+    debugoutput("  up: "..dcount)
+    check_seals()
+    for counter = 1,dcount do
+        while not turtle.up() do
+            turtle.digUp()
+            turtle.attackUp()
+        end
+        py = py+1
+        check_seals()
+    end
+    debugoutput("up ("..dcount.."), now at "..py)
+end
+
+function down(dcount)
+    if type(dcount)~="number" then
+        dcount = 1
+    end
+    debugoutput("  dn: "..dcount)
+    for counter = 1,dcount do
+        check_seals()
+        while not turtle.down() do
+            turtle.digDown()
+            turtle.attackDown()
+        end
+        py = py-1
+    end
+    debugoutput("down ("..dcount.."), now at "..py)
+    check_seals()
+end
+
+function forward(dcount)
+    if type(dcount)~="number" then
+        dcount = 1
+    end
+    for counter = 1,dcount do
+        sleep(0.15)
+        while not turtle.forward() do
+            turtle.dig()
+            turtle.attack()
+        end
+    end
+    debugoutput("  fw: "..dcount)
+    -- set horizontal movement
+    if pfhor==0 then
+        debugoutput("forward: moved "..dcount.." north")
+        pz = pz+dcount
+    elseif pfhor==1 then
+        debugoutput("forward: moved "..dcount.." east")
+        px = px+dcount
+    elseif pfhor==2 then
+        debugoutput("forward: moved "..dcount.." south")
+        pz=pz-dcount
+    elseif pfhor==3 then
+        debugoutput("forward: moved "..dcount.." west")
+        px=px-dcount
+    else
+        debugoutput("forward: moved "..dcount.." in direction "..pfhor.." (unknown)")
+    end
+    -- check_seals()
+end
+
+
+function fast_turns(cturns)
+    local cturns = tonumber(cturns)
+    local oldturns = cturns
+    cturns = cturns-(4*math.floor(cturns/4))
+    if math.abs(cturns)>2 then
+        cturns = math.floor(cturns/2)*(-1)
+    end
+    debugoutput("  fast_turns (old: "..oldturns..") -> "..cturns)
+    return cturns
+end
+
+
+function setDir(newheading)
+    local oldhead = pfhor   -- backup value
+    local turns = newheading-pfhor
+    debugoutput("old: "..oldhead.." / turns: "..turns.." / new:"..newheading)
+    turns = fast_turns(turns)
+    debugoutput("  setDir: turns "..turns)
+    -- turn the turtle
+    if turns>0 then
+        debugoutput("  setDir: "..turns.." (right)")
+        for i = 1,math.abs(turns) do
+            turtle.turnRight(turns)
+            if pfhor == 3 then
+                pfhor = 0
+            else
+                pfhor = pfhor+1
+            end
+        end
+    elseif turns<0 then
+        debugoutput("  setDir: "..turns.." (left)")
+        for i = 1,math.abs(turns) do
+            turtle.turnLeft(turns)
+            if pfhor == 0 then
+                pfhor = 3
+            else
+                pfhor = pfhor-1
+            end
+        end
+    end
+    -- pfhor = newheading%4
+    -- print("debug: oldhead:"..oldhead.."; turns:"..turns.."; now:"..pfhor)
+end
+
+
+function slice()
+    --- digs a slice (tunnel width=1)
+    local xcount
+    debugoutput("slice: begin (x="..px.."/y="..py.."/z="..py..")")
+    for xcount = 1,xdim do
+        debugoutput("  slice: xcount "..xcount)
+        if xcount == 1 then
+            if sealing then
+                if px==1 then
+                    setDir(3)
+                end
+                if px==xdim and xdim>1 then
+                    setDir(1)
+                end
+            else
+                if px==1 and xdim>1 then
+                    setDir(1)
+                end
+                if px==xdim and xdim>1 then
+                    setDir(3)
+                end
+            end
+        end
+        -- begin vertical digging
+        if ydim>=1 then
+            if py==1 then
+                -- turtle on floor
+                up(ydim-1)
+            elseif py==ydim then
+                -- turtle on top of tunnel
+                down(ydim-1)
+            else
+                -- turtle in the middle
+                debugoutput("  slice: turtle lost at y-pos:"..py)
+            end
+        end
+        -- after the vertical work
+        if xdim>1 and xcount==1 then
+            if px==1 then
+                setDir(1)
+            end
+            if px==xdim then
+                setDir(3)
+            end
+        end
+        -- move now
+        if xcount<xdim then
+            -- more to go ...
+            forward()
+        end
+        -- sleep(30)   -- debug
+    end
+end
+
+function place_torch_up()
+    -- places torch above the turtle
+    if torching then
+        selectslot(torches)
+        turtle.placeUp()
+        if newslot>0 then
+            -- if there are alternatives
+            torches = newslot
+            newslot = 0
+        end
+    end
+end
+
+function return_turtle()
+    debugoutput("-- returning to start position")
+    sealing = false     -- don't stop to seal
+    briding = false     -- no bridges too
+    local count         -- return fields counter
+    local distance      -- distance home
+    local torch_skip = 6    -- fields between torches
+    -- begin moving
+    if py>1 then
+        -- move to floor
+        down(py-1)
+    end
+    if px>1 then
+        setDir(3)   -- turn West to get to left
+        forward(px-1)
+    end
+    if returning then
+        if pz>1 then
+            setDir(2)   -- turn South to return
+            distance = pz-1
+            -- forward(distance)
+            for count = 1,distance do
+                forward()
+                if count%torch_skip==3 and count<distance and torching then
+                    place_torch_up()
+                end
+            end
+        end
+        -- back, turn to North
+    end
+    setDir(0)
+end
+
+
+
+-- externally reachable functions
+
+function get_returning()
+    return returning
+end
+function set_returning(bool)
+    if type(bool)=="boolean" then
+        returning = bool
+    elseif type(bool)=="nil" then
+        returning = true
+    else
+        print("Error (returning): can only set boolean values")
+    end
+end
+
+function get_bridging()
+    return bridging
+end
+function set_bridging(bool)
+    if type(bool)=="boolean" then
+        bridging = bool
+    elseif type(bool)=="nil" then
+        bridging = true
+    else    
+        print("Error (bridging): can only set boolean values")
+    end
+    if bridging then
+        print("Benoetige Material zum Brueckenbau in Slot "..bridgingmaterial..".")
+        tfuncs.ensure_material(bridgingmaterial)
+    end
+end
+
+function get_sealing()
+    return sealing
+end
+function set_sealing(bool)
+    if type(bool)=="boolean" then
+        sealing = bool
+    elseif type(bool)=="nil" then
+        sealing = true
+    else
+        print("Error (sealing): can only set boolean values")
+    end
+    if sealing then
+        print("Benoetige Material zum Versiegeln in Slot "..sealingmaterial..".")
+        tfuncs.ensure_material(sealingmaterial)
+    end
+end
+
+function get_break_no_material()
+    return break_no_material
+end
+function set_break_no_material(bool)
+    if type(bool)=="boolean" then
+        break_no_material = bool
+    elseif type(bool)=="nil" then
+        break_no_material = true
+    else
+        print("Error (break_no_material): can only set boolean values")
+    end
+end
+
+function get_debugging()
+    return debugging
+end
+function set_debugging(bool)
+    if type(bool)=="boolean" then
+        debugging = bool
+    elseif type(bool)=="nil" then
+        debugging = true
+    else
+        print("Error (debugging): can only set boolean values")
+    end
+end
+
+function get_torching()
+    return torching
+end
+function set_torching(bool)
+    if type(bool)=="boolean" then
+        torching = bool
+    elseif type(bool)=="nil" then
+        torching = true
+    else
+        print("Error (torching): can only set boolean values")
+    end
+    if torching then
+        print("Benoetige Fackeln in Slot "..torches..".")
+        tfuncs.ensure_material(torches)
+    end
+end
+
+
+function getTurtleDir()
+    local direction = { "Norden", "Osten", "Sueden", "Westen" }  -- starts with index 1 !!
+    local gps_dir = tfuncs.gps_heading()     -- gps_heading found?
+    print("Turtle zeigt nach: "..direction[pfhor+1])
+    if gps_dir then
+        print("GPS heading found: "..direction[gps_dir+1])
+    end
+    -- could call some gps-function to determine gps-based heading
+    return pfhor
+end
+
+function getTurtlePos()
+    print ("Turtle auf Position (x="..px..",y="..py..",z="..pz..") - relativ zum Start.")
+    return px,py,pz
+end
+
+function unload_if_full(distance)
+    -- return the turtle in straight line
+    -- for dist fields
+    -- turtle must be facing to the chest
+    local distance = tonumber(distance)
+    if distance>=0 and tfuncs.turtle_full() then
+        dig2.forward(distance)
+        if tfuncs.chest_in_front() then
+            for i=1,16 do
+                if not (i==bridgingmaterial or i==sealingmaterial or i==torches) then
+                -- if i~=bridgingmaterial and i~=sealingmaterial and i~=torches then
+                    tfuncs.transfer_to_chest(i)
+                end
+            end
+        end
+        turtle.turnLeft()
+        turtle.turnLeft()
+        dig2.forward(distance)
+        return true
+    else
+        return false
+    end
+end
+
+
+-- functions doing something like digging ...
+--
+--function tunnel(ix,iy,iz,ireturning,ibridging,isealing)
+function tunnel(ix,iy,iz)
+    --initialize()
+    -- checking variables input and their type
+    xdim = tonumber(ix)
+    ydim = tonumber(iy)
+    zdim = tonumber(iz)
+    local zcount = 0
+    -- when beginning new tunnel
+    px = 1
+    py = 1
+    pz = 1
+    pfhor = 0
+    -- pre-flight checks
+    if xdim==0 or ydim==0 or zdim==0 then
+        print("Du willst gar nicht graben.")
+        os.error(0)
+    else
+        print("Tunnel "..xdim.."*"..ydim.."*"..zdim.." Felder")
+        print("Pos: px="..px.."/py="..py.."/pz="..pz.."/pfhor="..pfhor)
+        print("returning="..tostring(returning).."/bridging="..tostring(bridging).."/sealing="..tostring(sealing)..".")
+        -- print("10 sec Aufwaermen ...")
+        -- sleep(10)
+    end
+
+    -- check fuel
+    tfuncs.checkFuelLevel(xdim*(ydim+1)*zdim+xdim+(ydim+1)+zdim)
+    -- begin
+    debugoutput("maindigger: begin digging ...")
+    for zcount = 1,zdim do
+        setDir(0)   -- turn N = digging direction
+        forward()   -- dig one field into new slice
+        --[[if sealing then
+            if px==1 then
+                -- turtle at left wall
+                setDir(3)   -- turn right/East
+            elseif px==xdim then
+                -- turtle at right wall
+                setDir(1)   --turn left/West
+            else
+                debugoutput("maindigger: turtle lost at x-pos:"..px)
+            end
+        end]]
+        debugoutput("-- digging slice "..zcount)
+        slice()
+    end
+    -- returning
+    return_turtle()
+end

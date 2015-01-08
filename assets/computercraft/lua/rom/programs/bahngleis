@@ -1,0 +1,152 @@
+#!/usr/bin/env lua
+
+-- Aufteilung des Materials in welche
+-- Slots der Turtle?
+local gleis = 1
+local beschleuniger = 2
+local fackel = 3
+local redstonefackel = 4
+local stein = 5
+local segment = 20         -- wie viele Felder bis das Muster wiederholt wird?
+local twoboost = true      -- Beschleuniger auf Feld segment-1?
+
+
+-- TODO: Feature-Request: Vorschau wie viel von welchem Material bei angegebener Gleislänge benötigt wird
+
+
+-- multi-used functions
+local function slots_info()
+    local t = {}
+    t[gleis] = "Gleise"
+    t[beschleuniger] = "Beschleuniger"
+    t[fackel] = "Fackeln"
+    t[redstonefackel] = "Redstone-Fackeln"
+    t[stein] = "Steine/Unterbau"
+    tfuncs.beladung(t)
+end
+
+
+local function baue_stein()
+    -- print ("debug: baue stein")
+    tfuncs.ensure_material(stein)
+    turtle.select(stein)
+    dig2.down()   -- make place for stone
+    if not turtle.compareDown() then
+        -- no cobblestone under the turtle
+        -- replace it
+        dig2.down()   -- make place for stone
+        dig2.up()      -- up one to place stone
+        turtle.placeDown()
+    end
+    dig2.up()
+end
+
+-- single-use-functions
+local function lege_gleis()
+    tfuncs.ensure_material(gleis)
+    turtle.select(gleis)
+    if not turtle.compareDown() then
+        turtle.placeDown()
+    end
+end
+
+
+local function lege_beschleuniger()
+    turtle.select(beschleuniger)
+    tfuncs.ensure_material(beschleuniger)
+    turtle.placeDown()
+end
+
+local function baue_fackel()
+    tfuncs.ensure_material(fackel) 
+    turtle.turnLeft()
+    dig2.forward()
+    baue_stein()
+    turtle.select(fackel)
+    turtle.placeDown()
+    turtle.back()
+    turtle.turnRight()
+end
+
+local function baue_redstonefackel()
+    tfuncs.ensure_material(redstonefackel) 
+    turtle.turnRight()
+    dig2.forward()
+    baue_stein()
+    turtle.select(redstonefackel)
+    turtle.placeDown()
+    turtle.back()
+    turtle.turnLeft()
+end
+
+local function lege_beschleuniger()
+    tfuncs.ensure_material(beschleuniger) 
+    turtle.select(beschleuniger)
+    turtle.placeDown()
+end
+
+
+-- main routine starts here ---------------
+print("Gleisbau-Bot")
+print("------------")
+print("Turtle baut Gleise incl. Fackeln, Beschleunigern und ggf. noch die Steine unter den Gleisen.")
+print("Turtle auf Position des ersten Gleises stellen!")
+-- define and calculate length
+write ("Wie weit soll die Strecke gebaut werden? ")
+laenge = tonumber(io.read())
+if laenge%segment~=0 then
+    -- wenn sich die Gleisanzahl nicht sauber durch die Segment-Länge
+    -- teilen lässt, dann auf Segment-Länge aufrunden
+    laenge = math.floor(laenge/segment)*segment
+    if laenge==0 then
+        -- es wird mindestens eine Segment-Länge Gleise gebaut
+        laenge=segment
+    end
+    print("Runde auf "..laenge.." Gleise auf.")
+end
+-- fuel check
+local fuel = (laenge*3+math.floor(laenge/10*(3*6)))
+tfuncs.checkFuelLevel(fuel)
+
+
+slots_info()
+print ("Enter wenn bereit.")
+local pause = io.read()
+
+
+-- start-position
+dig2.up()
+-- loop
+for counter = 1,laenge do
+     print ("Gleisstueck nr. "..counter)
+     if counter>1 then
+         dig2.forward()
+     end
+     if counter%segment==math.floor(segment/2) then
+         -- alle (Segment-Laenge/2) Felder eine normale Fackel
+         baue_stein()
+         lege_gleis()
+         baue_fackel()
+     elseif counter%segment==(segment-1) and twoboost then
+         -- vorletztes Gleis
+         baue_stein()
+         lege_beschleuniger()
+     elseif counter%segment==0 then
+         -- letzter Bauabschnitt
+         baue_stein()
+         lege_beschleuniger()
+         baue_redstonefackel()
+         baue_fackel()
+     else
+         -- normales Gleisstueck
+         turtle.select(gleis)
+         if not turtle.compareDown() then
+             -- gleis is needed here
+             baue_stein()
+             lege_gleis()
+         end
+     end
+end
+-- finally drop one down
+dig2.forward()
+dig2.down()

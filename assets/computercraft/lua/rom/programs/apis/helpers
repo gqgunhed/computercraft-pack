@@ -1,0 +1,112 @@
+#!/usr/bin/env lua
+
+function contains(t, e)
+  -- checks if element "e" is part of table "t"
+  -- returns: true if found
+  -- returns: false if not
+  for i = 1,#t do
+    if t[i] == e then 
+      return true 
+    end
+  end
+  return false
+end
+
+
+function answer_yes(text)
+    local yes = {"j", "y", "J", "Y"}
+    if text == nil then
+       text="(j/n)"
+    end
+    print (text)
+    while true do
+        local event,param = os.pullEvent("char")
+        if contains(yes,param) then
+          return true
+        else
+          return false
+        end
+    end
+end
+
+function keypress_or_q(text)
+    -- returns key-char or exits if "q" is pressed
+    if text == nil then
+        print("Weiter mit Taster, Q für Ende")
+    end
+    while true do
+        local event,param = os.pullEvent("char")
+        if param =="q" or param =="Q" then
+            print("Exiting.")
+            exit()
+        else
+            return param
+        end
+    end
+end
+
+function keyChar()
+    --- returns key-character of pressed key
+    local event,param = os.pullEvent()
+    if event=="char" then
+        return param
+    end
+end
+
+
+function split(s, d)
+    -- split string s by delimiter d
+    -- return list of substrings
+    local str = s
+    local result = {}
+    local counter = 1
+    while string.find(str, d) do
+        pos = string.find(str.."", d)
+        -- print ("debug: '"..tostring(d).."' found at pos "..tostring(pos).." of "..str)
+        -- get substring and store it
+        rstr = string.sub(str,1,pos-1)
+        table.insert(result, rstr)
+        -- print("debug: temp-result: "..result[counter])
+        -- cut down string
+        str = string.sub(str, pos+1)
+        counter = counter + 1
+    end
+    -- add the remaining string
+    table.insert(result, str)
+    return result
+end
+
+function printtable(t)
+    -- prints fields of table
+    print("working on: "..tostring(t))
+    for i = 1,#t do
+        print (i..": "..tostring(t[i]))
+    end
+end
+
+
+function json_to_file(f,d)
+    -- stores into file "f"
+    -- the data "d"
+    j = json.encodePretty(d)
+    fh = fs.open(f, "w")
+    fh.write(j)
+    fh.close()
+end
+
+function json_from_file(f)
+    -- loads json data from "f"
+    -- returns original data
+    result = nil
+    if fs.exists(f) then
+        fh = fs.open(f, "r")
+        j = fh.readAll()
+        fh.close()
+        result = json.decode(j)
+    end
+    return result
+end
+
+printf = function(s,...)
+        return io.write(s:format(...))
+    end -- function

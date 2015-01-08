@@ -1,0 +1,88 @@
+#!/usr/bin/env lua
+
+local skip = 3          -- blocks between tunnels
+local chester = true    -- return and drop-into chest
+local warnblocks = 650  -- how many blocks fit into turtle (average)?
+
+local bridge = 1
+local seal = 2
+local torch = 4
+
+function beladungsinfo()
+    local t = {}
+    t[bridge] = "Bodenplatten"
+    -- t[seal] = "Seitenwaende/Decke"
+    t[torch] = "Fackeln"
+    tfuncs.beladung(t)
+end
+
+
+print("RASTER v3")
+print("=========")
+beladungsinfo()
+print("Wie viele Quergaenge?")
+local sections = tonumber(io.read())
+print("Laenge der Seitentunnel?")
+local depth = tonumber(io.read())
+print("Ganghoehe?")
+local height = tonumber(io.read())
+
+--[[
+if depth*height>=warnblocks then
+    print("ACHTUNG: Seitengang ist vermutlich zu gross für Laderaum der Turtle.")
+    if not helpers.answer_yes("Soll wirklich gegraben werden?") then
+        error(0)
+    end
+end
+]]
+
+
+dig2.set_sealing(false)
+dig2.set_bridging(true)
+dig2.set_torching(true)
+
+-- main routine here
+for gang = 1,sections do
+    -- middle tunnel
+    print("T-Sektion Nummer ("..gang..")")
+    local distance = skip+1
+    dig2.set_returning(false)
+    dig2.tunnel(1,height,distance)
+    -- tunnel to left
+    turtle.turnLeft()
+    dig2.set_returning(true)
+    dig2.tunnel(1,height,depth)
+    -- turn to entry point
+    turtle.turnLeft()
+    if chester and tfuncs.turtle_full() then
+        -- after unloading turtle is facing in starting direction
+        dig2.unload_if_full(gang*distance)
+        turtle.turnRight()
+    else
+        -- otherwise turn to rigth side tunnel.
+        turtle.turnLeft()
+    end
+    -- tunnel to right
+    dig2.tunnel(1,height,depth)
+    -- turn back to main direction
+    if chester and tfuncs.turtle_full() then
+        turtle.turnRight()
+        dig2.unload_if_full(gang*distance)
+        -- turtle is back, facing digging direction
+    else
+        -- faces into the side tunnel, so
+        turtle.turnLeft()
+        -- now facing in digging direction
+    end
+end
+-- middle way back
+turtle.turnLeft()
+turtle.turnLeft()
+dig2.forward(sections*(skip+1)) -- unstoppable, even by mobs. Watch out ;-)
+if chester then
+    tfuncs.transfer_to_chest()
+end
+turtle.turnLeft()
+turtle.turnLeft()
+--
+print("Fertig.")

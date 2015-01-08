@@ -1,0 +1,93 @@
+#!/usr/bin/env lua
+
+local fuel = 0
+local hoehe = 5         -- height of staircase
+local stufen = 0        -- how many steps down?
+local tunnellen = 3     -- tunnel at end of stairs
+-- material slots
+local steps = 1         -- slot for stairs
+local stone = 2         -- stone
+local torch = 3         -- torches here
+local torches_needed = 0
+
+
+function place_stone()
+    -- Steine unter die Turtle kleben
+    -- aber nur, wenn kein Block darunter entdeckt wird
+    if not turtle.detectDown() then
+        turtle.select(stone)
+        turtle.placeDown()
+        turtle.select(1)
+    end
+end
+
+function place_stair()
+    -- Stufe  unterhalb der Turtle platzieren
+    turtle.select(steps)
+    turtle.placeDown()
+    turtle.select(1)
+end
+
+function place_torch()
+    -- Fackel oberhalb der Turtle platzieren
+    -- Fackel richtet sich automatisch an der Wand aus
+    print("Fackel aus slot "..torch.." platzieren.")
+    turtle.select(torch)
+    turtle.placeUp()
+    turtle.select(1)
+end
+
+function treppe_hoch(stufen)
+    -- baut eine gerade Treppe mit Anzahl "stufen"
+    -- nach oben
+    local stufen = tonumber(stufen)
+    if stufen<1 then
+        print ("Error: Stufenanzahl falsch.")
+        print ("stufen = "..stufen)
+        error(1)
+    end
+    for i = 1,stufen do
+        dig2.forward()
+        place_stone()
+        dig2.up(hoehe-1)
+        if i%3==0 then
+            -- jedes dritte Feld eine Fackel verbauen
+            dig2.down()
+            place_torch()
+            dig2.down(hoehe-3)
+        else
+            dig2.down(hoehe-2)
+        end
+        place_stair()
+    end
+end
+
+function treppe_runter(stufen)
+    -- baut eine gerade Treppe mit Anzahl "stufen"
+    -- nach unten
+    local stufen = tonumber(stufen)
+    if stufen<1 then
+        print ("Error: Stufenanzahl falsch.")
+        print ("stufen = "..stufen)
+        error(1)
+    end
+    -- los geht's
+    for i = 1,stufen do
+        dig2.forward()
+        dig2.up(hoehe-3)
+        if i%3==0 then
+            dig2.down()
+            place_torch()
+            dig2.down(hoehe-2)
+        else
+            dig2.down(hoehe-1)
+        end
+        place_stone()
+        dig2.up()
+        turtle.turnLeft()
+        turtle.turnLeft()
+        place_stair()
+        turtle.turnLeft()
+        turtle.turnLeft()
+    end
+end

@@ -1,0 +1,21 @@
+#!/usr/bin/env lua
+
+-- trying refuel
+tfuncs.refuel()
+
+print("Graebt eine Roehre - also einen Tunnel, aber dichtet alle Loecher mit Material ab.")
+print("Bodenplatten aus SLOT 1.")
+print("Decke+Waende aus SLOT 2.")
+print("")
+write("Tunnel Breite (x)? ")
+x = tonumber(io.read())
+write("Tunnel Hoehe (y)? ")
+y = tonumber(io.read())
+write("Tunnel Laenge (z)? ")
+z = tonumber(io.read())
+
+
+dig2.set_returning(true)
+dig2.set_bridging(true)
+dig2.set_sealing(true)
+dig2.tunnel(x,y,z)

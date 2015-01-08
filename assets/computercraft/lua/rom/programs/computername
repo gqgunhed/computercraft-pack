@@ -1,0 +1,21 @@
+#!/usr/in/env lua
+
+term.clear()
+term.setCursorPos(1,1)
+if os.getComputerLabel() then
+    print("Computer (id:"..tostring(os.getComputerID()).."/name:"..tostring(os.getComputerLabel())..") hat schon einen Namen:")
+    print(os.getComputerLabel())
+    if not helpers.answer_yes("Computer/Turtle umbenennen (j/n)?") then
+        os.error(0)
+    end
+end
+
+-- give a new name
+term.clear()
+term.setCursorPos(1,1)
+	term.write("Benenne Computer/Turtle ("..tostring(os.getComputerID()).."):")
+    newname=io.read()
+	os.setComputerLabel(newname)
+--
+print ("ok, mein Name ist jetzt: "..newname)
+

@@ -1,0 +1,107 @@
+#!/usr/bin/env lua
+
+function strafe_right (count)
+    --[[ strafe Turtle "count"
+    Felder nach rechts
+    ]]
+    turtle.turnRight()
+    for i=1,count do
+        if turtle.detect() 
+        then
+            print ("Fehler, Objekt im Weg.")
+        else
+            turtle.forward()
+        end
+    end
+    turtle.turnLeft()
+end
+
+function strafe_left (count)
+    --[[ strafe Turtle "count"
+    Felder nach links
+    ]]
+    turtle.turnLeft()
+    for i=1,count do
+        if turtle.detect() 
+        then
+            print ("Fehler, Objekt im Weg.")
+        else
+            turtle.forward()
+        end
+    end
+    turtle.turnRight()
+end
+
+function move_to_object()
+    --[[ bewegt die Turtle vorwärts
+    bis zum nächsten Hindernis
+
+    @return: zurückgelegte Strecke
+    ]]
+
+    local count = 0
+    while not turtle.detect() do
+        if turtle.forward() then
+            count = count + 1
+        end
+    end
+    print ("Objekt nach "..count.." Feldern.")
+    return count
+end
+
+function move_dig_attack(distance)
+    -- moves/digs/attacks with turtle until
+    -- moved for distance-blocks
+    if distance == nil or distance<1 then
+        print("Error: Entfernung mindestens 1 Feld.")
+        exit()
+    else
+        distance = tonumber(distance)
+    end
+    -- start loop
+    for i = 1,distance do
+        while not turtle.forward() do
+            if turtle.detect then
+                dig.digger()
+            else
+                turtle.attack()
+            end
+        end            
+    end
+end
+
+function return_left_of(distance)
+    -- makes two u-turns to the left and
+    -- drives the turtle "distance" fields back
+    -- and re-positions to previous direction
+    turtle.turnLeft()
+    move_dig_attack(1)
+    turtle.turnLeft()
+    -- long way back
+    move_dig_attack(distance)
+    -- u-turn
+    turtle.turnLeft()
+    move_dig_attack(1)
+    turtle.turnLeft()
+end
+
+function check_height(altitude)
+    -- recalibrates altitude-above-ground
+    -- by descending until hitting floor and then
+    -- lifting up to desired altitude
+    if altitude == nil then
+        altitude=1
+    else
+        altitude = tonumber(altitude)
+    end
+    -- drop to ground
+    while not turtle.detectDown() do
+        turtle.down()
+    end
+    -- print("debug: turtle on ground.")
+    -- print("debug: ascending "..max.." field(s).")
+    for i = 1,altitude do
+        turtle.up()
+    end
+end
+

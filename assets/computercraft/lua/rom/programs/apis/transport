@@ -1,0 +1,60 @@
+#!/usr/bin/env lua
+
+local routingfile = '/routing_prefs.txt'
+
+function get_routing()
+    -- defines routing preferences X-Y-Z
+    -- reads info from file
+   
+end
+
+
+function set_routing()
+    -- defines routing preferences X-Y-Z
+    -- stores info in file
+   
+end
+
+
+function load_route()
+    -- loads list of waypoints from file
+
+end
+
+
+function save_route()
+    -- saves list of waypoints into file
+   
+end
+
+
+function route_forward()
+    -- process a list of waypoints in given order
+    
+end
+
+
+function route_back()
+    -- process a list of waypoints in reverse order
+   
+end
+
+
+function goto(coordinates, precedence)
+    -- move turtle to coordinates, move X/Y/Z in given precedence
+    -- @param coordinates:    array of x,y,z coordinates
+    -- @param precedence:     string of 'XYZ' or 'ZYX', ...
+
+end
+
+
+function load_startpos()
+    -- load position from file (X/Y/Z/(N|E|S|W))
+   
+end
+
+
+function save_startpos()
+    -- saves position and heading to file (X/Y/Z/(N|E|S|W))
+
+end

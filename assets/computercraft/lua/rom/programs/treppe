@@ -1,0 +1,77 @@
+#!/usr/bin/env lua
+
+local fuel = 0
+local hoehe = 5         -- height of staircase
+local stufen = 0        -- how many steps down?
+local tunnellen = 3     -- tunnel at end of stairs
+-- material slots
+local steps = 1         -- slot for stairs
+local stone = 2         -- stone
+local torch = 3         -- torches here
+local torches_needed = 0
+
+
+function return_turtle(stcount)
+    for i=1,stcount do
+        dig2.up()
+        dig2.forward()
+    end
+    dig2.forward()
+end
+
+
+function treppe(stufen)
+    dig2.up()
+    stairs.treppe_runter(stufen)
+    -- dig_stairs_down(stufen)
+    -- tunnel at the end
+    dig2.forward()
+    dig2.up(2)
+    dig2.down(3)
+    dig2.tunnel(1,4,tunnellen)
+    turtle.turnLeft()
+    turtle.turnLeft()
+    return_turtle(stufen)
+    -- auf startposition
+end
+
+function beladungsinfo()
+    local t = {}
+    t[steps] = "Stufen"
+    t[stone] = "Steine/Unterbau"
+    t[torch] = "Fackeln"
+    tfuncs.beladung(t)
+end
+
+
+
+-- main routine here
+
+-- more information
+beladungsinfo()
+print("Wie viele Stufen?")
+local stufen = tonumber(io.read())
+
+if stufen<=1 then
+    print("Ok, Du willst gar nicht graben.")
+    error()
+end
+
+
+-- stufen
+tfuncs.ensure_material(steps, stufen)
+-- steine
+tfuncs.ensure_material(stone)
+-- fackeln
+torches_needed = (math.floor(stufen/3)+1)
+tfuncs.ensure_material(torch, torches_needed)
+
+
+
+-- calculate and check fuel level
+fuel = (stufen*hoehe)+(stufen*2) +50
+tfuncs.checkFuelLevel(fuel)
+
+treppe(stufen)
+
+print ("finished.")

@@ -1,0 +1,47 @@
+#!/usr/bin/env lua
+
+local ID = tostring(os.getComputerID())
+local CN = tostring(os.getComputerLabel())
+local FL = tostring(turtle.getFuelLevel())
+local MSG = ID.." ("..CN..") online, "..FL.." fuel"
+
+
+-- startup file
+-- should be copied to /startup on all turtles
+
+function active_rednet()
+    rednet.open("right")
+    rednet.broadcast(MSG)
+end
+
+
+function display_status()
+    print(MSG)
+end
+
+
+-- main routine here
+function main()
+    active_rednet()
+    display_status()
+end
+
+
+local tArgs = { ... }
+if #tArgs == 0 then
+    main()
+else
+    local command = tArgs[1]
+    if command=="install" then
+        -- install as startup-file
+        here = tostring(shell.getRunningProgram())
+        here = "/"..string.match(here, "[%a\/_]+")
+        there = "/startup"
+        if fs.exists(there) then
+            print(there.." already there, deleting it")
+            fs.delete(there)
+        end
+        print("copying to "..there)
+        fs.copy(here, there)
+    end
+end

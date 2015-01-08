@@ -1,0 +1,85 @@
+#!/usr/bin/env lua
+
+function forw_check()
+    --[[ bewegt Turtle nur vorwärts, wenn frei
+    ]]
+    while turtle.detect() do
+        print ("Hindernis entdeckt, warte ...")
+        --[[wahrscheinlich ein Baum oder eine
+        zweite Turtle(Holzfäller). Beides sollte
+        nach einer Weile erledigt sein.
+        ]]
+        sleep(3)
+    end
+    turtle.forward()
+end
+
+
+function staubsauger(x,y)
+  --[[ funktion um die flaeche
+        vom startpunkt aus
+        den gegebenen zwei koordinatenpaaren
+        abzufahren und einzusammeln
+        Startpunkt: 0
+
+        +-------+
+        y       |
+        |       |
+        0---x---+
+  ]]
+
+  local moved_x = 0
+  local moved_y = 0
+  -- get into start-position
+  turtle.up()
+  turtle.turnRight()
+  -- loop
+  for moved_y = 0,y do
+    for moved_x = 0,x do
+        forw_check()
+        turtle.suck()
+    end
+
+    if moved_y < y then
+        if (moved_y % 2 == 0 or moved_y == 0) then
+          -- corner right boundary
+          turtle.turnLeft()
+          forw_check()
+          turtle.suck()
+          turtle.turnLeft()
+        else
+          -- corner left boundary
+          turtle.turnRight()
+          forw_check()
+          turtle.suck()
+          turtle.turnRight()
+        end
+    else
+        print("Finished, returning.")
+    end
+  -- einsammeln zu ende
+  end
+
+  -- return to start
+  print("debug: moved_x="..moved_x.." / moved_y="..moved_y.."")
+  if moved_x > 0 then
+    -- turtle am rechten rand
+    turtle.turnLeft()
+    turtle.turnLeft()
+    for i = 0,moved_x do
+      forw_check()
+    end
+  end
+
+  -- turtle am linken rand
+  turtle.turnLeft()
+  for i = 0,moved_y do
+    forw_check()
+  end
+  -- park on ground
+  turtle.down()
+  turtle.turnLeft()
+  turtle.turnLeft()
+  -- wieder in startposition
+end
+

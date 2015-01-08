@@ -1,0 +1,78 @@
+#!/usr/bin/env lua
+
+local x = 3
+local y = 21
+
+
+function f_warning()
+    local warmup = 5
+    areacount = x*y*2
+    -- stacks = (areacount/64)+1
+    -- print("area is "..areacount)
+    -- print("you should place "..stacks.." stacks of seeds into inventory slots 1++")
+    -- print("")
+    tfuncs.checkFuelLevel(areacount)
+    print("warming up "..warmup.." secs ...")
+    sleep(warmup)
+end
+
+
+function f_start()
+    dig2.forward()
+    turtle.turnRight()
+    dig2.forward(3)
+    turtle.turnLeft()
+    dig2.forward(3)
+end
+
+function f_park()
+    -- starting at lower left of 2nd field
+    turtle.turnRight()
+    dig2.forward(3)
+    turtle.turnLeft()
+    dig2.forward()
+    turtle.turnRight()
+    dig2.forward(3)
+    turtle.turnRight()
+    dig2.forward(3)
+    turtle.turnRight()
+    turtle.back()
+    -- unload
+    for i = 2,16 do
+        turtle.select(i)
+        turtle.dropDown(turtle.getItemCount(i))
+    end
+end
+
+function f_start1()
+    -- go to lower left of 1st field
+    turtle.turnLeft()
+    dig2.forward()
+    turtle.turnRight()
+    dig2.forward(9)
+    turtle.turnRight()
+end
+
+function f_start2()
+    -- got to lower left of 2nd field
+    -- starting at lower left of 1st field
+    turtle.turnRight()
+    dig2.forward(6)
+    turtle.turnLeft()
+end
+
+
+-- main routine
+f_warning()
+f_start()
+
+-- 1st field
+f_start1()
+farming.farm(x,y)
+
+-- 2nd field
+f_start2()
+farming.farm(x,y)
+
+-- back to start
+f_park()

@@ -1,0 +1,16 @@
+#!/usr/bin/env lua
+-- Tankt turtle aus allen Slots nach
+
+local slotcount = 16
+
+print ("Treibstoff jetzt: "..turtle.getFuelLevel())
+-- Nachtanken
+print ("Suche Treibstoff in "..slotcount.." Slots.")
+for i = 1,slotcount do
+  turtle.select(i)
+  if turtle.refuel() then
+    print (" - Slot "..i.." / "..turtle.getFuelLevel())
+  end
+end
+--
+print ("Treibstoff jetzt: "..turtle.getFuelLevel())
