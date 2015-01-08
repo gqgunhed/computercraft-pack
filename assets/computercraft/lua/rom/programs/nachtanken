@@ -3,6 +3,13 @@
 
 local slotcount = 16
 
+-- Prüfe ob Turtle einen Namen hat
+if not os.getComputerLabel() then
+  print ("Turtle hat keinen Namen. Treibstoff ginge verloren.")
+  print ("Zuerst einen Namen vergeben mit: 'label set [name]'")
+  os.error(1)
+end
+
 print ("Treibstoff jetzt: "..turtle.getFuelLevel())
 -- Nachtanken
 print ("Suche Treibstoff in "..slotcount.." Slots.")
