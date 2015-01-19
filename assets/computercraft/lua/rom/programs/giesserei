@@ -1,0 +1,7 @@
+#!/usr/bin/env/lua
+while true do
+    redstone.setOutput('bottom', false)
+    sleep(0.1)
+    redstone.setOutput('bottom', true)
+    sleep(9)
+end
