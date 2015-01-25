@@ -1,0 +1,25 @@
+#!/usr/bin/env lua
+
+local errorloop = 0     -- errors occured how often?
+local wait = 1.5        -- wait seconds between digs
+
+
+function repair()
+    turtle.dig()        -- to be safe there's no block in front
+    turtle.forward()    -- move into position under lava
+    turtle.turnRight()  -- turn right to blocked water
+    turtle.dig()        -- remove stone blockage
+    turtle.turnLeft()   -- reposition
+    turtle.back()       -- back to start
+    sleep(wait)         -- wait for a new lava+water block
+end
+
+while true do
+    while turtle.detect() do
+        turtle.dig()
+        turtle.dropDown()  -- drops stone down out of turtle
+        sleep(wait)
+    end
+    -- common error occured, maybe lava was too fast
+    repair()
+end
