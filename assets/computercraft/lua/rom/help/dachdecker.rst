@@ -1,7 +1,7 @@
 dachdecker
 ==========
 
-Die Turtle baut ein Giebeldach aus Stufen. Dazu muss sie auf die erste Stelle gesetzt werden, an der nachher das Dach beginnen soll.
+Die Turtle baut ein Giebeldach aus Stufen. Dazu muss sie auf die erste Stelle gesetzt werden, an der nachher das Dach beginnen soll. Der Giebel verläuft dabei nach rechts (von der Startposition der Turtle aus gesehen).
 
 Die Turtle baut das Dach nach vorne, rechts.
 
