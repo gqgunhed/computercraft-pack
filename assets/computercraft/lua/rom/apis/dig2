@@ -530,11 +530,9 @@ function tunnel(ix,iy,iz)
         print("Du willst gar nicht graben.")
         os.error(0)
     else
-        print("Tunnel "..xdim.."*"..ydim.."*"..zdim.." Felder")
-        print("Pos: px="..px.."/py="..py.."/pz="..pz.."/pfhor="..pfhor)
-        print("returning="..tostring(returning).."/bridging="..tostring(bridging).."/sealing="..tostring(sealing)..".")
-        -- print("10 sec Aufwaermen ...")
-        -- sleep(10)
+        debugoutput("Tunnel "..xdim.."*"..ydim.."*"..zdim.." Felder")
+        debugoutput("Pos: px="..px.."/py="..py.."/pz="..pz.."/pfhor="..pfhor)
+        debugoutput("returning="..tostring(returning).."/bridging="..tostring(bridging).."/sealing="..tostring(sealing)..".")
     end
 
     -- check fuel
