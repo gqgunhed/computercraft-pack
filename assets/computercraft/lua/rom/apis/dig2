@@ -561,3 +561,15 @@ function tunnel(ix,iy,iz)
     -- returning
     return_turtle()
 end
+
+function roehre(ix,iy,iz)
+    -- checking variables input and their type
+    xdim = tonumber(ix)
+    ydim = tonumber(iy)
+    zdim = tonumber(iz)
+    -- start digging with fixed options
+    set_returning(true)
+    set_bridging(true)
+    set_sealing(true)
+    tunnel(x,y,z)
+end
