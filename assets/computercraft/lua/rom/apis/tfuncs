@@ -48,18 +48,17 @@ function checkFuelLevel(minfuel)
     if curfuel<minfuel then
         print("--- wenig Treibstoff ---")
         print("Zu wenig Treibstoff ("..curfuel..").")
-        print("Benoetige mindestens "..minfuel.." Treibstoff, bitte nachtanken.")
-        print("Nach dem Nachtanken eventuell mit 'reboot' neustarten.")
+        print("Benoetige mindestens "..minfuel..".")
         error(1)
-    else
-        print("Ok! (benoetige "..minfuel..", habe "..curfuel..")")
+    -- too much output here ;-)
+    -- else
+        -- print("Ok! (benoetige "..minfuel..", habe "..curfuel..")")
     end
 end
 
 
 function detectLeft()
-    --[[checks if left of turtle is a free block
-    ]]
+    -- checks if there's a block LEFT of the turtle
     turtle.turnLeft()
     result = turtle.detect()
     turte.turnRight()
@@ -67,8 +66,7 @@ function detectLeft()
 end
 
 function detectRight()
-    --[[checks if left of turtle is a free block
-    ]]
+    -- checks if there's a block RIGHT of the turtle
     turte.turnRight()
     result = turtle.detect()
     turtle.turnLeft()
