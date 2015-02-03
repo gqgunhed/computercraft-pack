@@ -1,9 +1,13 @@
 gtunnel2
 ========
 
-Wie "gtunnel", aber mit folgenden optionalen Zusatzfunktionen:
+Wie "gtunnel", aber mit folgenden optionalen 
+Zusatzfunktionen:
 
-* Es können Bodenplatte gelegt werden, z.B. über Lava, Schluchten, Wasser. Dadurch auch zum Brückenbau geeignet.
-* Es können auf dem Rückweg Fackeln im Gang angebracht werden.
+* Es koennen Bodenplatte gelegt werden, z.B. 
+  ueber Lava, Schluchten, Wasser. Dadurch auch
+  zum Brueckenbau geeignet.
+* Es koennen auf dem Rueckweg Fackeln im Gang 
+  angebracht werden.
 
-Die Turtle gräbt nach oben, rechts, vorne.
+Die Turtle graebt nach oben, rechts, vorne.
