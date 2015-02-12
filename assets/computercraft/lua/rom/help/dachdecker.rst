@@ -10,3 +10,15 @@ Beladung:
 * Slot 1: Stufen
 * Slot 2: Dachgiebel (halb hohe Holzblöcke)
 * Slot 3: Unterbau (damit die Stufen in die richtige Richtung zeigen, z.B. Erde)
+
+Schema::
+
+ zzzzzzzz
+ zzzzzzzz
+ gggggggg
+ zzzzzzzz
+ Tzzzzzzz
+ 
+ T - Turtle
+ z - Ziegel
+ g - Giebelstück
