@@ -15,4 +15,18 @@ Empfohlene Parameter:
 * ein paar Cobblestone in Slot 1
 * ein Stack Fackeln in Slot 4
 
+Schema::
+
+ -----+-----
+      |
+ -----+-----
+      |
+      T
+      KK
+
+ T - Turtle
+ K - Kiste
+ 
 Hinweis: Wenn man auf Nummer sicher gehen will und Rastergänge mit nur einem Block Abstand haben will, einfach die Turtle erneut auf das selbe Gebiet ansetzen, aber zwei Felder weiter vorne starten lassen ;-)
+
+Startposition: Am Boden, Richtung Wand
