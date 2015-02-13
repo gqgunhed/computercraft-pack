@@ -3,8 +3,11 @@ gtunnel
 
 Ein verbessertes Tunnelprogramm:
 
-* Kann mit von oben herunterfallendem Sand oder Kies umgehen.
-* Lässt sich nicht durch Mobs stören sondern hackt diese um.
-* Optional kann die Turtle nach dem Graben zur Startposition zurückfahren.
+* Kann mit von oben herunterfallendem Sand oder
+  Kies umgehen.
+* Laesst sich nicht durch Mobs stoeren sondern
+  hackt diese um.
+* Optional kann die Turtle nach dem Graben zur
+  Startposition zurueckfahren.
 
-Die Turtle gräbt nach oben, rechts, vorne.
+Die Turtle graebt nach oben, rechts, vorne.
