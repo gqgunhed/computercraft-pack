@@ -17,8 +17,9 @@ eingeben::
  edit /rom/help/gtunnel2.rst
 
 Die Anleitungen sind als ReStructured Text 
-geschrieben, damit man sie sowohl im Web als auch auf 
-den Geraeten im Spiel einfach lesen und editieren kann.
+geschrieben, damit man sie sowohl im Web als auch 
+auf den Geraeten im Spiel einfach lesen und 
+editieren kann.
 
 Weblinks
 ========
