@@ -7,7 +7,7 @@ Um die Modpacks wie auf unserem Server nutzen zu können ist es am einfachsten d
 Paket über den Technic Launcher zu installieren. Die Links dazu findest Du auf http://www.5stengl.de/pages/minecraft.html.
 
 # Installation
-Einfach mit einem "git clone https://github.com/gqgunhed/computercraft-pack/" in den Unterordner "resourcepacks" im Minecraft-Ordner klonen.
+Einfach mit einem `git clone https://github.com/gqgunhed/computercraft-pack/` in den Unterordner `resourcepacks` im Minecraft-Ordner klonen.
 Danach in Minecraft unter "Resource Packs" die Programme aktivieren.
 
 # Fehler melden
